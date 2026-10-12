@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{274CF35E-2046-4686-AFE3-066E8838EB31}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Biograf.Api", "src\Biograf.Api\Biograf.Api.csproj", "{DC2FCF8B-C1FE-4C17-851B-235AF2160BC7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Biograf.Client", "src\Biograf.Client\Biograf.Client.csproj", "{B6CF576E-D1A8-4114-AE52-548A7CAD15A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Biograf.Shared", "src\Biograf.Shared\Biograf.Shared.csproj", "{90DC0783-F394-4E8D-A925-EA07EFFFDFD2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{5DEDAF45-F3EA-471E-81A1-C70CC0097A3D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Biograf.Tests", "tests\Biograf.Tests\Biograf.Tests.csproj", "{626223E0-830B-453C-9942-1052B6604EBC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DC2FCF8B-C1FE-4C17-851B-235AF2160BC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC2FCF8B-C1FE-4C17-851B-235AF2160BC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC2FCF8B-C1FE-4C17-851B-235AF2160BC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC2FCF8B-C1FE-4C17-851B-235AF2160BC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6CF576E-D1A8-4114-AE52-548A7CAD15A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6CF576E-D1A8-4114-AE52-548A7CAD15A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6CF576E-D1A8-4114-AE52-548A7CAD15A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6CF576E-D1A8-4114-AE52-548A7CAD15A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90DC0783-F394-4E8D-A925-EA07EFFFDFD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90DC0783-F394-4E8D-A925-EA07EFFFDFD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90DC0783-F394-4E8D-A925-EA07EFFFDFD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90DC0783-F394-4E8D-A925-EA07EFFFDFD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{626223E0-830B-453C-9942-1052B6604EBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{626223E0-830B-453C-9942-1052B6604EBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{626223E0-830B-453C-9942-1052B6604EBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{626223E0-830B-453C-9942-1052B6604EBC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DC2FCF8B-C1FE-4C17-851B-235AF2160BC7} = {274CF35E-2046-4686-AFE3-066E8838EB31}
+		{B6CF576E-D1A8-4114-AE52-548A7CAD15A6} = {274CF35E-2046-4686-AFE3-066E8838EB31}
+		{90DC0783-F394-4E8D-A925-EA07EFFFDFD2} = {274CF35E-2046-4686-AFE3-066E8838EB31}
+		{626223E0-830B-453C-9942-1052B6604EBC} = {5DEDAF45-F3EA-471E-81A1-C70CC0097A3D}
+	EndGlobalSection
+EndGlobal
