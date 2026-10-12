@@ -6,6 +6,8 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+// API:t ligger på en annan adress än klienten, se wwwroot/appsettings.json.
+var apiUrl = builder.Configuration["ApiUrl"] ?? builder.HostEnvironment.BaseAddress;
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiUrl) });
 
 await builder.Build().RunAsync();

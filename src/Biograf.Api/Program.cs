@@ -1,15 +1,21 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Blazor-klienten körs på en egen port och behöver därför tillåtas via CORS.
+const string KlientPolicy = "Klient";
+var klientUrl = builder.Configuration["KlientUrl"] ?? "https://localhost:7071";
+
+builder.Services.AddCors(options =>
+    options.AddPolicy(KlientPolicy, policy => policy
+        .WithOrigins(klientUrl, "http://localhost:5173")
+        .AllowAnyHeader()
+        .AllowAnyMethod()));
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -17,9 +23,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors(KlientPolicy);
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
+
+// Gör Program synlig för integrationstester (WebApplicationFactory).
+public partial class Program { }
