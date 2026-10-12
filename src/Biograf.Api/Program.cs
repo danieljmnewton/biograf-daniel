@@ -22,11 +22,12 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Skapa/uppdatera databasen automatiskt vid uppstart.
+// Skapa/uppdatera databasen och fyll den med testdata vid uppstart.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BiografDbContext>();
     await db.Database.MigrateAsync();
+    await DbSeeder.SeedAsync(db);
 }
 
 if (app.Environment.IsDevelopment())
