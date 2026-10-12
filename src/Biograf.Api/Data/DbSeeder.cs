@@ -19,7 +19,37 @@ public static class DbSeeder
 
         db.Filmer.AddRange(filmer);
         db.Salonger.AddRange(salonger);
+        db.Visningar.AddRange(SkapaVisningar(filmer, salonger, DateTime.Today, antalDagar: 7));
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Lägger tre visningar per salong och dag. Filmerna roteras så att varje
+    /// salong visar olika filmer, och tiderna ligger så långt isär att även den
+    /// längsta filmen hinner ta slut innan nästa visning.
+    /// </summary>
+    private static IEnumerable<Visning> SkapaVisningar(
+        List<Film> filmer, List<Salong> salonger, DateTime startdatum, int antalDagar)
+    {
+        TimeSpan[] tider = [new(14, 0, 0), new(17, 30, 0), new(21, 0, 0)];
+
+        for (var dag = 0; dag < antalDagar; dag++)
+        {
+            for (var s = 0; s < salonger.Count; s++)
+            {
+                for (var t = 0; t < tider.Length; t++)
+                {
+                    var film = filmer[(dag * tider.Length + t + s * 4) % filmer.Count];
+                    yield return new Visning
+                    {
+                        Film = film,
+                        Salong = salonger[s],
+                        Starttid = startdatum.AddDays(dag) + tider[t],
+                        Grundpris = tider[t].Hours >= 17 ? 145 : 120
+                    };
+                }
+            }
+        }
     }
 
     private static List<Film> SkapaFilmer() =>
