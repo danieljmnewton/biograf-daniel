@@ -1,3 +1,6 @@
+using Biograf.Api.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Blazor-klienten körs på en egen port och behöver därför tillåtas via CORS.
@@ -10,11 +13,21 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowAnyMethod()));
 
+builder.Services.AddDbContext<BiografDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("Biograf")));
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Skapa/uppdatera databasen automatiskt vid uppstart.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<BiografDbContext>();
+    await db.Database.MigrateAsync();
+}
 
 if (app.Environment.IsDevelopment())
 {
