@@ -1,0 +1,107 @@
+@page "/filmer"
+@implements IDisposable
+@inject ApiKlient Api
+
+<PageTitle>Filmer – Newtons Biograf</PageTitle>
+
+<h1>Filmer</h1>
+
+<div class="filterrad kort">
+    <div class="falt falt-bred">
+        <label for="sok">Sök titel</label>
+        <input id="sok" type="search" placeholder="T.ex. Dune" @bind="sok" @bind:event="oninput" @bind:after="SokMedFordrojning" />
+    </div>
+    <div class="falt">
+        <label for="genre">Genre</label>
+        <select id="genre" @bind="genre" @bind:after="HamtaAsync">
+            <option value="">Alla genrer</option>
+            @foreach (var g in genrer)
+            {
+                <option value="@g">@g</option>
+            }
+        </select>
+    </div>
+    <div class="falt">
+        <label for="alder">Åldersgräns</label>
+        <select id="alder" @bind="maxAlder" @bind:after="HamtaAsync">
+            <option value="">Alla</option>
+            <option value="0">Barntillåten</option>
+            <option value="7">Upp till 7 år</option>
+            <option value="11">Upp till 11 år</option>
+            <option value="15">Upp till 15 år</option>
+        </select>
+    </div>
+</div>
+
+<Meddelande Text="@fel" />
+
+@if (filmer is null)
+{
+    <Laddar Text="Hämtar filmer…" />
+}
+else if (filmer.Count == 0)
+{
+    <Meddelande Typ="info" Text="Inga filmer matchar sökningen." />
+}
+else
+{
+    <p class="dampad">@filmer.Count @(filmer.Count == 1 ? "film" : "filmer")</p>
+    <div class="filmrutnat">
+        @foreach (var film in filmer)
+        {
+            <a class="filmkort" href="filmer/@film.Id">
+                <FilmPoster Titel="@film.Titel" Genre="@film.Genre" Aldersgrans="film.Aldersgrans" PosterUrl="@film.PosterUrl" />
+                <div class="filmkort-info">
+                    <h3>@film.Titel</h3>
+                    <span class="dampad">@film.Genre · @Datumtext.Langd(film.LangdMinuter)</span>
+                    @if (film.AntalKommandeVisningar == 0)
+                    {
+                        <span class="tagg">Inga visningar just nu</span>
+                    }
+                </div>
+            </a>
+        }
+    </div>
+}
+
+@code {
+    private List<FilmDto>? filmer;
+    private List<string> genrer = [];
+    private string sok = string.Empty;
+    private string genre = string.Empty;
+    private string maxAlder = string.Empty;
+    private string? fel;
+    private CancellationTokenSource? fordrojning;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var svar = await Api.GetAsync<List<string>>("api/filmer/genrer");
+        genrer = svar.Data ?? [];
+        await HamtaAsync();
+    }
+
+    /// <summary>Väntar en kort stund efter senaste tangenttryckningen innan sökningen skickas.</summary>
+    private async Task SokMedFordrojning()
+    {
+        fordrojning?.Cancel();
+        fordrojning = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(300, fordrojning.Token);
+            await HamtaAsync();
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private async Task HamtaAsync()
+    {
+        var url = Url.Med("api/filmer", ("sok", sok), ("genre", genre), ("maxAldersgrans", maxAlder));
+        var svar = await Api.GetAsync<List<FilmDto>>(url);
+        filmer = svar.Data ?? [];
+        fel = svar.Fel;
+    }
+
+    public void Dispose() => fordrojning?.Cancel();
+}

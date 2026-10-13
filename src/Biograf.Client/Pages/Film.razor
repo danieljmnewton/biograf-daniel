@@ -1,0 +1,76 @@
+@page "/filmer/{Id:int}"
+@inject ApiKlient Api
+
+<PageTitle>@(film?.Titel ?? "Film") – Newtons Biograf</PageTitle>
+
+<a class="tillbaka" href="filmer">← Alla filmer</a>
+
+<Meddelande Text="@fel" />
+
+@if (film is null)
+{
+    @if (fel is null)
+    {
+        <Laddar />
+    }
+}
+else
+{
+    <section class="filmdetalj">
+        <FilmPoster Titel="@film.Titel" Genre="@film.Genre" Aldersgrans="film.Aldersgrans" PosterUrl="@film.PosterUrl" Klass="poster-stor" />
+        <div>
+            <h1>@film.Titel</h1>
+            <div class="taggar">
+                <span class="tagg">@film.Genre</span>
+                <span class="tagg">@Datumtext.Langd(film.LangdMinuter)</span>
+                <span class="tagg">@(film.Aldersgrans == 0 ? "Barntillåten" : $"Från {film.Aldersgrans} år")</span>
+            </div>
+            <p class="beskrivning">@film.Beskrivning</p>
+        </div>
+    </section>
+
+    <h2>Kommande visningar</h2>
+    @if (visningarPerDag.Count == 0)
+    {
+        <Meddelande Typ="info" Text="Filmen har inga inplanerade visningar just nu." />
+    }
+    else
+    {
+        @foreach (var dag in visningarPerDag)
+        {
+            <div class="dagrad">
+                <h3>@Datumtext.Dag(dag.Key)</h3>
+                <div class="tider">
+                    @foreach (var visning in dag)
+                    {
+                        <VisningsKnapp Visning="visning" />
+                    }
+                </div>
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private FilmDto? film;
+    private List<IGrouping<DateTime, VisningDto>> visningarPerDag = [];
+    private string? fel;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var filmSvar = await Api.GetAsync<FilmDto>($"api/filmer/{Id}");
+        film = filmSvar.Data;
+        fel = filmSvar.Fel;
+
+        if (film is null)
+            return;
+
+        var visningSvar = await Api.GetAsync<List<VisningDto>>(Url.Med("api/visningar", ("filmId", Id)));
+        visningarPerDag = (visningSvar.Data ?? [])
+            .GroupBy(v => v.Starttid.Date)
+            .OrderBy(g => g.Key)
+            .ToList();
+    }
+}

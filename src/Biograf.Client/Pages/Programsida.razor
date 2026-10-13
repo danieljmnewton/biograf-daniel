@@ -1,0 +1,114 @@
+@page "/program"
+@inject ApiKlient Api
+
+<PageTitle>Program – Newtons Biograf</PageTitle>
+
+<h1>Program</h1>
+
+<div class="dagval" role="tablist">
+    @foreach (var dag in dagar)
+    {
+        <button class="dagknapp @(dag == valdDag ? "vald" : "")" role="tab" @onclick="() => ValjDag(dag)">
+            @Datumtext.Dag(dag)
+        </button>
+    }
+</div>
+
+<div class="filterrad kort">
+    <div class="falt">
+        <label for="salong">Salong</label>
+        <select id="salong" @bind="salongId" @bind:after="HamtaAsync">
+            <option value="">Alla salonger</option>
+            @foreach (var s in salonger)
+            {
+                <option value="@s.Id">@s.Namn</option>
+            }
+        </select>
+    </div>
+    <div class="falt">
+        <label for="genre">Genre</label>
+        <select id="genre" @bind="genre" @bind:after="HamtaAsync">
+            <option value="">Alla genrer</option>
+            @foreach (var g in genrer)
+            {
+                <option value="@g">@g</option>
+            }
+        </select>
+    </div>
+</div>
+
+<Meddelande Text="@fel" />
+
+@if (visningarPerFilm is null)
+{
+    <Laddar Text="Hämtar programmet…" />
+}
+else if (visningarPerFilm.Count == 0)
+{
+    <Meddelande Typ="info" Text="Inga visningar matchar ditt val. Prova en annan dag eller ta bort filtren." />
+}
+else
+{
+    @foreach (var film in visningarPerFilm)
+    {
+        var forsta = film.First();
+        <article class="programrad kort">
+            <a href="filmer/@forsta.FilmId">
+                <FilmPoster Titel="@forsta.FilmTitel" Genre="@forsta.Genre" Aldersgrans="forsta.Aldersgrans" Klass="poster-liten" />
+            </a>
+            <div class="programrad-info">
+                <h3><a href="filmer/@forsta.FilmId">@forsta.FilmTitel</a></h3>
+                <span class="dampad">@forsta.Genre · @Datumtext.Langd(forsta.LangdMinuter) · @Datumtext.Aldersgrans(forsta.Aldersgrans)</span>
+                <div class="tider">
+                    @foreach (var visning in film)
+                    {
+                        <VisningsKnapp Visning="visning" />
+                    }
+                </div>
+            </div>
+        </article>
+    }
+}
+
+@code {
+    private readonly List<DateTime> dagar = Enumerable.Range(0, 7).Select(i => DateTime.Today.AddDays(i)).ToList();
+    private DateTime valdDag = DateTime.Today;
+    private List<SalongDto> salonger = [];
+    private List<string> genrer = [];
+    private string salongId = string.Empty;
+    private string genre = string.Empty;
+    private List<IGrouping<int, VisningDto>>? visningarPerFilm;
+    private string? fel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Salonger och genrer behövs bara för filtren och kan hämtas samtidigt.
+        var salongTask = Api.GetAsync<List<SalongDto>>("api/salonger");
+        var genreTask = Api.GetAsync<List<string>>("api/filmer/genrer");
+        await Task.WhenAll(salongTask, genreTask);
+
+        salonger = salongTask.Result.Data ?? [];
+        genrer = genreTask.Result.Data ?? [];
+        await HamtaAsync();
+    }
+
+    private async Task ValjDag(DateTime dag)
+    {
+        valdDag = dag;
+        await HamtaAsync();
+    }
+
+    private async Task HamtaAsync()
+    {
+        visningarPerFilm = null;
+        var url = Url.Med("api/visningar", ("datum", valdDag), ("salongId", salongId), ("genre", genre));
+        var svar = await Api.GetAsync<List<VisningDto>>(url);
+        fel = svar.Fel;
+
+        // En rad per film med filmens tider, sorterat efter första visningen.
+        visningarPerFilm = (svar.Data ?? [])
+            .GroupBy(v => v.FilmId)
+            .OrderBy(g => g.Min(v => v.Starttid))
+            .ToList();
+    }
+}
