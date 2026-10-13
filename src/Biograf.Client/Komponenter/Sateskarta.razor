@@ -1,0 +1,64 @@
+@* Ritar salongen rad för rad med duken längst fram. Lediga säten kan klickas för att väljas. *@
+
+<div class="sateskarta">
+    <div class="duk">Duk</div>
+
+    <div class="sateskarta-rader">
+        @foreach (var rad in Saten.GroupBy(s => s.Rad).OrderBy(r => r.Key))
+        {
+            <div class="saterad">
+                <span class="radnummer">@rad.Key</span>
+                @foreach (var sate in rad.OrderBy(s => s.Nummer))
+                {
+                    var vald = Valda.Contains(sate.Id);
+                    <button type="button"
+                            class="@Klass(sate, vald)"
+                            disabled="@sate.Upptagen"
+                            title="@Beskrivning(sate)"
+                            aria-pressed="@vald"
+                            @onclick="() => Vaxla(sate)">
+                        @sate.Nummer
+                    </button>
+                }
+                <span class="radnummer">@rad.Key</span>
+            </div>
+        }
+    </div>
+
+    <div class="teckenforklaring">
+        <span><i class="sate"></i> Ledig</span>
+        <span><i class="sate sate-vip"></i> VIP (+@Priser.VipTillagg kr)</span>
+        <span><i class="sate sate-vald"></i> Vald</span>
+        <span><i class="sate sate-upptagen"></i> Upptagen</span>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<SateStatusDto> Saten { get; set; } = [];
+    [Parameter, EditorRequired] public HashSet<int> Valda { get; set; } = [];
+    [Parameter] public int MaxAntal { get; set; } = 10;
+
+    /// <summary>Anropas när urvalet ändras så att sidan kan räkna om priset.</summary>
+    [Parameter] public EventCallback OnAndrad { get; set; }
+
+    private static string Klass(SateStatusDto sate, bool vald) =>
+        "sate" + (sate.Typ == "VIP" ? " sate-vip" : "") + (sate.Upptagen ? " sate-upptagen" : "") + (vald ? " sate-vald" : "");
+
+    private static string Beskrivning(SateStatusDto sate) =>
+        $"Rad {sate.Rad}, plats {sate.Nummer}" + (sate.Typ == "VIP" ? " (VIP)" : "") + (sate.Upptagen ? " – upptagen" : "");
+
+    private async Task Vaxla(SateStatusDto sate)
+    {
+        if (sate.Upptagen)
+            return;
+
+        if (!Valda.Remove(sate.Id))
+        {
+            if (Valda.Count >= MaxAntal)
+                return;
+            Valda.Add(sate.Id);
+        }
+
+        await OnAndrad.InvokeAsync();
+    }
+}

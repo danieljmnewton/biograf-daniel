@@ -1,0 +1,140 @@
+@page "/boka/{VisningId:int}"
+@inject ApiKlient Api
+
+<PageTitle>Välj platser – Newtons Biograf</PageTitle>
+
+@if (bekraftelse is not null)
+{
+    <section class="kort bekraftelse">
+        <span class="bekraftelse-ikon">✓</span>
+        <h1>Tack för din bokning!</h1>
+        <p class="dampad">Visa bokningsnumret i kassan eller vid insläppet.</p>
+        <div class="bokningsnummer">@bekraftelse.Bokningsnummer</div>
+
+        <dl class="bokningsfakta">
+            <dt>Film</dt><dd>@bekraftelse.FilmTitel</dd>
+            <dt>När</dt><dd>@Datumtext.DagOchTid(bekraftelse.Starttid)</dd>
+            <dt>Salong</dt><dd>@bekraftelse.SalongNamn</dd>
+            <dt>Platser</dt><dd>@PlatsText(bekraftelse.Platser)</dd>
+            <dt>Totalt</dt><dd><strong>@bekraftelse.Totalpris kr</strong></dd>
+        </dl>
+
+        <div class="hero-knappar">
+            <a class="knapp knapp-primar" href="mina-bokningar">Mina bokningar</a>
+            <a class="knapp" href="program">Tillbaka till programmet</a>
+        </div>
+    </section>
+}
+else if (karta is null)
+{
+    <Meddelande Text="@fel" />
+    @if (fel is null)
+    {
+        <Laddar Text="Hämtar säteskartan…" />
+    }
+}
+else
+{
+    <a class="tillbaka" href="program">← Programmet</a>
+    <h1>@karta.FilmTitel</h1>
+    <p class="dampad">@Datumtext.DagOchTid(karta.Starttid) · @karta.SalongNamn · @lediga lediga platser</p>
+
+    <Meddelande Text="@fel" />
+
+    <div class="bokningslayout">
+        <Sateskarta Saten="karta.Saten" Valda="valda" OnAndrad="StateHasChanged" />
+
+        <aside class="kort sammanfattning">
+            <h2>Din bokning</h2>
+            @if (valda.Count == 0)
+            {
+                <p class="dampad">Klicka på lediga platser i kartan. Du kan välja upp till 10.</p>
+            }
+            else
+            {
+                <ul class="valda-platser">
+                    @foreach (var sate in ValdaSaten)
+                    {
+                        <li>
+                            <span>Rad @sate.Rad, plats @sate.Nummer @if (sate.Typ == "VIP") { <span class="tagg tagg-vip">VIP</span> }</span>
+                            <span>@PrisFor(sate) kr</span>
+                        </li>
+                    }
+                </ul>
+                <div class="totalt">
+                    <span>Totalt</span>
+                    <strong>@ValdaSaten.Sum(PrisFor) kr</strong>
+                </div>
+            }
+
+            <AuthorizeView>
+                <Authorized>
+                    <button class="knapp knapp-primar knapp-stor bred" disabled="@(valda.Count == 0 || skickar)" @onclick="BokaAsync">
+                        @(skickar ? "Bokar…" : valda.Count == 0 ? "Välj platser" : $"Boka {valda.Count} {(valda.Count == 1 ? "plats" : "platser")}")
+                    </button>
+                </Authorized>
+                <NotAuthorized>
+                    <a class="knapp knapp-primar knapp-stor bred" href="@($"logga-in?tillbaka={Uri.EscapeDataString($"boka/{VisningId}")}")">Logga in för att boka</a>
+                </NotAuthorized>
+            </AuthorizeView>
+
+            <p class="dampad liten">Grundpris @karta.Grundpris kr · VIP @karta.VipPris kr. Avbokning går fram till @Bokningsregler.AvbokningsgransTimmar timmar före visningen.</p>
+        </aside>
+    </div>
+}
+
+@code {
+    [Parameter] public int VisningId { get; set; }
+
+    private SateskartaDto? karta;
+    private readonly HashSet<int> valda = [];
+    private BokningDto? bekraftelse;
+    private string? fel;
+    private bool skickar;
+
+    private int lediga => karta?.Saten.Count(s => !s.Upptagen) ?? 0;
+
+    private IEnumerable<SateStatusDto> ValdaSaten =>
+        karta!.Saten.Where(s => valda.Contains(s.Id)).OrderBy(s => s.Rad).ThenBy(s => s.Nummer);
+
+    protected override Task OnParametersSetAsync() => HamtaKartaAsync();
+
+    private async Task HamtaKartaAsync()
+    {
+        var svar = await Api.GetAsync<SateskartaDto>($"api/visningar/{VisningId}/saten");
+        karta = svar.Data;
+        if (!svar.Lyckades)
+            fel = svar.Fel;
+
+        // Ta bort val som någon annan har hunnit boka.
+        if (karta is not null)
+            valda.RemoveWhere(id => karta.Saten.Any(s => s.Id == id && s.Upptagen));
+    }
+
+    private int PrisFor(SateStatusDto sate) => sate.Typ == "VIP" ? karta!.VipPris : karta!.Grundpris;
+
+    private static string PlatsText(IEnumerable<BokadPlatsDto> platser) =>
+        string.Join(", ", platser.Select(p => $"rad {p.Rad} plats {p.Nummer}{(p.Typ == "VIP" ? " (VIP)" : "")}"));
+
+    private async Task BokaAsync()
+    {
+        skickar = true;
+        fel = null;
+
+        var dto = new SkapaBokningDto { VisningId = VisningId, SateIds = valda.ToList() };
+        var svar = await Api.PostAsync<BokningDto>("api/bokningar", dto);
+
+        if (svar.Lyckades)
+        {
+            bekraftelse = svar.Data;
+        }
+        else
+        {
+            fel = svar.Fel;
+            // Platserna kan ha blivit upptagna, så hämta kartan på nytt.
+            await HamtaKartaAsync();
+        }
+
+        skickar = false;
+    }
+}
