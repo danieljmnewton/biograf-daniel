@@ -1,4 +1,5 @@
 @page "/"
+@inject ApiKlient Api
 
 <PageTitle>Newtons Biograf</PageTitle>
 
@@ -6,17 +7,40 @@
     <h1>Bio som det <span>ska</span> vara</h1>
     <p>Tre salonger, VIP-platser längst bak och de senaste filmerna. Välj visning, välj plats och boka på under en minut.</p>
     <div class="hero-knappar">
-        <AuthorizeView>
-            <NotAuthorized>
-                <a class="knapp knapp-primar knapp-stor" href="registrera">Bli medlem</a>
-                <a class="knapp knapp-stor" href="logga-in">Logga in</a>
-            </NotAuthorized>
-            <Authorized>
-                <span class="dampad">Välkommen tillbaka, @context.User.Identity?.Name!</span>
-            </Authorized>
-        </AuthorizeView>
+        <a class="knapp knapp-primar knapp-stor" href="program">Se dagens program</a>
+        <a class="knapp knapp-stor" href="filmer">Bläddra bland filmer</a>
     </div>
+    <AuthorizeView>
+        <Authorized>
+            <p class="dampad" style="margin:1.25rem 0 0">Välkommen tillbaka, @context.User.Identity?.Name!</p>
+        </Authorized>
+        <NotAuthorized>
+            <p class="dampad" style="margin:1.25rem 0 0">Ny här? <a href="registrera">Bli medlem</a> för att boka.</p>
+        </NotAuthorized>
+    </AuthorizeView>
 </section>
+
+@if (aktuella is { Count: > 0 })
+{
+    <section class="startsektion">
+        <div class="sektionsrubrik">
+            <h2>Aktuellt på bio</h2>
+            <a href="filmer">Alla filmer →</a>
+        </div>
+        <div class="filmrutnat">
+            @foreach (var film in aktuella)
+            {
+                <a class="filmkort" href="filmer/@film.Id">
+                    <FilmPoster Titel="@film.Titel" Genre="@film.Genre" Aldersgrans="film.Aldersgrans" PosterUrl="@film.PosterUrl" />
+                    <div class="filmkort-info">
+                        <h3>@film.Titel</h3>
+                        <span class="dampad">@film.Genre · @Datumtext.Langd(film.LangdMinuter)</span>
+                    </div>
+                </a>
+            }
+        </div>
+    </section>
+}
 
 <section class="fordelar">
     <div class="kort fordel">
@@ -32,3 +56,20 @@
         <p>Avboka själv fram till två timmar före visningen.</p>
     </div>
 </section>
+
+@code {
+    private List<FilmDto>? aktuella;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var svar = await Api.GetAsync<List<FilmDto>>("api/filmer");
+
+        // De fem filmer som har flest kommande visningar.
+        aktuella = (svar.Data ?? [])
+            .Where(f => f.AntalKommandeVisningar > 0)
+            .OrderByDescending(f => f.AntalKommandeVisningar)
+            .ThenBy(f => f.Titel)
+            .Take(5)
+            .ToList();
+    }
+}
