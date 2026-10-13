@@ -1,0 +1,168 @@
+@page "/admin/salonger"
+@attribute [Authorize(Roles = Roller.PersonalEllerAdmin)]
+@inject ApiKlient Api
+@inject IJSRuntime JS
+
+<PageTitle>Salonger – Administration</PageTitle>
+
+<h1>Administration</h1>
+<AdminMeny />
+
+<Meddelande Text="@fel" />
+<Meddelande Typ="ok" Text="@klart" />
+
+<div class="admin-delad">
+    <section class="kort">
+        <div class="sektionsrubrik">
+            <h2>Salonger</h2>
+            <button class="knapp knapp-liten knapp-primar" @onclick="Ny">+ Ny salong</button>
+        </div>
+
+        @if (salonger is null)
+        {
+            <Laddar />
+        }
+        else
+        {
+            <table class="tabell">
+                <thead><tr><th>Namn</th><th>Platser</th><th>Layout</th><th>VIP-rader</th><th>Kommande visningar</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var salong in salonger)
+                    {
+                        <tr class="@(redigeradId == salong.Id ? "markerad" : "")">
+                            <td>@salong.Namn</td>
+                            <td>@salong.Kapacitet</td>
+                            <td>@salong.Rader × @salong.PlatserPerRad</td>
+                            <td>@salong.VipRader</td>
+                            <td>@salong.AntalKommandeVisningar</td>
+                            <td class="atgarder">
+                                <button class="knapp knapp-liten" @onclick="() => Redigera(salong)">Ändra</button>
+                                <button class="knapp knapp-liten knapp-fara" @onclick="() => TaBortAsync(salong)">Ta bort</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    @if (formular is not null)
+    {
+        <section class="kort">
+            <h2>@(redigeradId is null ? "Ny salong" : "Ändra salong")</h2>
+            <EditForm Model="formular" OnValidSubmit="SparaAsync" class="formular">
+                <DataAnnotationsValidator />
+                <div class="falt">
+                    <label>Namn</label>
+                    <InputText @bind-Value="formular.Namn" />
+                    <ValidationMessage For="() => formular.Namn" />
+                </div>
+                <div class="falt-rad">
+                    <div class="falt">
+                        <label>Rader</label>
+                        <InputNumber @bind-Value="formular.Rader" />
+                        <ValidationMessage For="() => formular.Rader" />
+                    </div>
+                    <div class="falt">
+                        <label>Platser per rad</label>
+                        <InputNumber @bind-Value="formular.PlatserPerRad" />
+                        <ValidationMessage For="() => formular.PlatserPerRad" />
+                    </div>
+                    <div class="falt">
+                        <label>VIP-rader (bakerst)</label>
+                        <InputNumber @bind-Value="formular.VipRader" />
+                        <ValidationMessage For="() => formular.VipRader" />
+                    </div>
+                </div>
+                <p class="dampad liten">
+                    Ger @(formular.Rader * formular.PlatserPerRad) platser, varav @(Math.Min(formular.VipRader, formular.Rader) * formular.PlatserPerRad) VIP.
+                    Layouten kan inte ändras när salongen har visningar.
+                </p>
+                <div class="knapprad">
+                    <button type="submit" class="knapp knapp-primar" disabled="@sparar">Spara</button>
+                    <button type="button" class="knapp" @onclick="Stang">Avbryt</button>
+                </div>
+            </EditForm>
+        </section>
+    }
+</div>
+
+@code {
+    private List<SalongDto>? salonger;
+    private SparaSalongDto? formular;
+    private int? redigeradId;
+    private string? fel, klart;
+    private bool sparar;
+
+    protected override Task OnInitializedAsync() => HamtaAsync();
+
+    private async Task HamtaAsync()
+    {
+        var svar = await Api.GetAsync<List<SalongDto>>("api/salonger");
+        salonger = svar.Data ?? [];
+    }
+
+    private void Ny()
+    {
+        redigeradId = null;
+        formular = new SparaSalongDto();
+    }
+
+    private void Redigera(SalongDto salong)
+    {
+        redigeradId = salong.Id;
+        formular = new SparaSalongDto
+        {
+            Namn = salong.Namn,
+            Rader = salong.Rader,
+            PlatserPerRad = salong.PlatserPerRad,
+            VipRader = salong.VipRader
+        };
+    }
+
+    private void Stang()
+    {
+        formular = null;
+        redigeradId = null;
+    }
+
+    private async Task SparaAsync()
+    {
+        sparar = true;
+        fel = klart = null;
+
+        var svar = redigeradId is int id
+            ? await Api.PutAsync<SalongDto>($"api/salonger/{id}", formular!)
+            : await Api.PostAsync<SalongDto>("api/salonger", formular);
+
+        if (svar.Lyckades)
+        {
+            klart = $"{svar.Data!.Namn} sparades.";
+            Stang();
+            await HamtaAsync();
+        }
+        else
+        {
+            fel = svar.Fel;
+        }
+        sparar = false;
+    }
+
+    private async Task TaBortAsync(SalongDto salong)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"Ta bort {salong.Namn}?"))
+            return;
+
+        fel = klart = null;
+        var svar = await Api.DeleteAsync($"api/salonger/{salong.Id}");
+        if (svar.Lyckades)
+        {
+            klart = $"{salong.Namn} togs bort.";
+            await HamtaAsync();
+        }
+        else
+        {
+            fel = svar.Fel;
+        }
+    }
+}

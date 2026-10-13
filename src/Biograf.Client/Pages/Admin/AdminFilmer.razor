@@ -1,0 +1,186 @@
+@page "/admin/filmer"
+@attribute [Authorize(Roles = Roller.PersonalEllerAdmin)]
+@inject ApiKlient Api
+@inject IJSRuntime JS
+
+<PageTitle>Filmer – Administration</PageTitle>
+
+<h1>Administration</h1>
+<AdminMeny />
+
+<Meddelande Text="@fel" />
+<Meddelande Typ="ok" Text="@klart" />
+
+<div class="admin-delad">
+    <section class="kort">
+        <div class="sektionsrubrik">
+            <h2>Filmregister</h2>
+            <button class="knapp knapp-liten knapp-primar" @onclick="Ny">+ Ny film</button>
+        </div>
+
+        @if (filmer is null)
+        {
+            <Laddar />
+        }
+        else
+        {
+            <table class="tabell">
+                <thead><tr><th>Titel</th><th>Genre</th><th>Ålder</th><th>Längd</th><th>Visningar</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var film in filmer)
+                    {
+                        <tr class="@(redigeradId == film.Id ? "markerad" : "")">
+                            <td>@film.Titel</td>
+                            <td>@film.Genre</td>
+                            <td>@Datumtext.Aldersgrans(film.Aldersgrans)</td>
+                            <td>@film.LangdMinuter min</td>
+                            <td>@film.AntalKommandeVisningar</td>
+                            <td class="atgarder">
+                                <button class="knapp knapp-liten" @onclick="() => Redigera(film)">Ändra</button>
+                                <button class="knapp knapp-liten knapp-fara" @onclick="() => TaBortAsync(film)">Ta bort</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    @if (formular is not null)
+    {
+        <section class="kort">
+            <h2>@(redigeradId is null ? "Ny film" : "Ändra film")</h2>
+            <EditForm Model="formular" OnValidSubmit="SparaAsync" class="formular">
+                <DataAnnotationsValidator />
+                <div class="falt">
+                    <label>Titel</label>
+                    <InputText @bind-Value="formular.Titel" />
+                    <ValidationMessage For="() => formular.Titel" />
+                </div>
+                <div class="falt-rad">
+                    <div class="falt">
+                        <label>Genre</label>
+                        <InputText @bind-Value="formular.Genre" list="genrer" />
+                        <datalist id="genrer">
+                            @foreach (var g in filmer?.Select(f => f.Genre).Distinct().Order() ?? Enumerable.Empty<string>())
+                            {
+                                <option value="@g" />
+                            }
+                        </datalist>
+                        <ValidationMessage For="() => formular.Genre" />
+                    </div>
+                    <div class="falt">
+                        <label>Åldersgräns</label>
+                        <InputSelect @bind-Value="formular.Aldersgrans">
+                            <option value="0">Barntillåten</option>
+                            <option value="7">7 år</option>
+                            <option value="11">11 år</option>
+                            <option value="15">15 år</option>
+                            <option value="18">18 år</option>
+                        </InputSelect>
+                    </div>
+                    <div class="falt">
+                        <label>Längd (min)</label>
+                        <InputNumber @bind-Value="formular.LangdMinuter" />
+                        <ValidationMessage For="() => formular.LangdMinuter" />
+                    </div>
+                </div>
+                <div class="falt">
+                    <label>Beskrivning</label>
+                    <InputTextArea @bind-Value="formular.Beskrivning" />
+                </div>
+                <div class="falt">
+                    <label>Affisch (länk, valfri)</label>
+                    <InputText @bind-Value="formular.PosterUrl" placeholder="https://…" />
+                    <ValidationMessage For="() => formular.PosterUrl" />
+                </div>
+                <div class="knapprad">
+                    <button type="submit" class="knapp knapp-primar" disabled="@sparar">Spara</button>
+                    <button type="button" class="knapp" @onclick="Stang">Avbryt</button>
+                </div>
+            </EditForm>
+        </section>
+    }
+</div>
+
+@code {
+    private List<FilmDto>? filmer;
+    private SparaFilmDto? formular;
+    private int? redigeradId;
+    private string? fel, klart;
+    private bool sparar;
+
+    protected override Task OnInitializedAsync() => HamtaAsync();
+
+    private async Task HamtaAsync()
+    {
+        var svar = await Api.GetAsync<List<FilmDto>>("api/filmer");
+        filmer = svar.Data ?? [];
+    }
+
+    private void Ny()
+    {
+        redigeradId = null;
+        formular = new SparaFilmDto();
+    }
+
+    private void Redigera(FilmDto film)
+    {
+        redigeradId = film.Id;
+        formular = new SparaFilmDto
+        {
+            Titel = film.Titel,
+            Genre = film.Genre,
+            Aldersgrans = film.Aldersgrans,
+            LangdMinuter = film.LangdMinuter,
+            Beskrivning = film.Beskrivning,
+            PosterUrl = film.PosterUrl
+        };
+    }
+
+    private void Stang()
+    {
+        formular = null;
+        redigeradId = null;
+    }
+
+    private async Task SparaAsync()
+    {
+        sparar = true;
+        fel = klart = null;
+
+        var svar = redigeradId is int id
+            ? await Api.PutAsync<FilmDto>($"api/filmer/{id}", formular!)
+            : await Api.PostAsync<FilmDto>("api/filmer", formular);
+
+        if (svar.Lyckades)
+        {
+            klart = $"{svar.Data!.Titel} sparades.";
+            Stang();
+            await HamtaAsync();
+        }
+        else
+        {
+            fel = svar.Fel;
+        }
+        sparar = false;
+    }
+
+    private async Task TaBortAsync(FilmDto film)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"Ta bort {film.Titel}?"))
+            return;
+
+        fel = klart = null;
+        var svar = await Api.DeleteAsync($"api/filmer/{film.Id}");
+        if (svar.Lyckades)
+        {
+            klart = $"{film.Titel} togs bort.";
+            await HamtaAsync();
+        }
+        else
+        {
+            fel = svar.Fel;
+        }
+    }
+}
