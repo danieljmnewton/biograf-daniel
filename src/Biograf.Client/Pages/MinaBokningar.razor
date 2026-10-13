@@ -1,0 +1,80 @@
+@page "/mina-bokningar"
+@attribute [Authorize]
+@inject ApiKlient Api
+
+<PageTitle>Mina bokningar – Newtons Biograf</PageTitle>
+
+<h1>Mina bokningar</h1>
+
+<Meddelande Text="@fel" />
+<Meddelande Typ="ok" Text="@klart" />
+
+@if (bokningar is null)
+{
+    <Laddar Text="Hämtar dina bokningar…" />
+}
+else if (bokningar.Count == 0)
+{
+    <div class="kort">
+        <p>Du har inga bokningar ännu.</p>
+        <a class="knapp knapp-primar" href="program">Se programmet</a>
+    </div>
+}
+else
+{
+    <h2>Kommande</h2>
+    @if (kommande.Count == 0)
+    {
+        <p class="dampad">Inga kommande visningar. <a href="program">Hitta något att se</a>.</p>
+    }
+    <div class="bokningslista">
+        @foreach (var bokning in kommande)
+        {
+            <BokningsKort @key="bokning.Id" Bokning="bokning" OnAvboka="AvbokaAsync" />
+        }
+    </div>
+
+    @if (tidigare.Count > 0)
+    {
+        <h2 class="mellanrum">Tidigare och avbokade</h2>
+        <div class="bokningslista">
+            @foreach (var bokning in tidigare)
+            {
+                <BokningsKort @key="bokning.Id" Bokning="bokning" />
+            }
+        </div>
+    }
+}
+
+@code {
+    private List<BokningDto>? bokningar;
+    private string? fel;
+    private string? klart;
+
+    private List<BokningDto> kommande => bokningar?.Where(b => b.Status == Bokningsregler.Aktiv).ToList() ?? [];
+    private List<BokningDto> tidigare => bokningar?.Where(b => b.Status != Bokningsregler.Aktiv).ToList() ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var svar = await Api.GetAsync<List<BokningDto>>("api/bokningar/mina");
+        bokningar = svar.Data ?? [];
+        fel = svar.Fel;
+    }
+
+    private async Task AvbokaAsync(int id)
+    {
+        fel = klart = null;
+        var svar = await Api.PostAsync<BokningDto>($"api/bokningar/{id}/avboka");
+
+        if (svar.Lyckades && svar.Data is not null)
+        {
+            // Byt ut bokningen i listan mot den uppdaterade så att den flyttas till "Tidigare och avbokade".
+            bokningar = bokningar!.Select(b => b.Id == id ? svar.Data : b).ToList();
+            klart = $"Bokning {svar.Data.Bokningsnummer} är avbokad och platserna är släppta.";
+        }
+        else
+        {
+            fel = svar.Fel;
+        }
+    }
+}

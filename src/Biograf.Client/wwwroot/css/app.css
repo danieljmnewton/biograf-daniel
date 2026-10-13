@@ -553,6 +553,41 @@ textarea { min-height: 110px; resize: vertical; }
 .bokningsfakta dd { margin: 0; }
 .bekraftelse .hero-knappar { justify-content: center; }
 
+/* ---------- Mina bokningar ---------- */
+
+.mellanrum { margin-top: 2.5rem; }
+
+.bokningslista {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 1rem;
+}
+@media (max-width: 400px) { .bokningslista { grid-template-columns: 1fr; } }
+
+.bokningskort { display: grid; gap: 1rem; border-left: 4px solid var(--kant); }
+.bokningskort.status-aktiv { border-left-color: var(--accent); }
+.bokningskort.status-avbokad { opacity: .65; }
+.bokningskort.status-avbokad h3 { text-decoration: line-through; }
+.bokningskort-huvud { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.bokningskort-huvud h3 { margin-bottom: .2rem; }
+.bokningskort .bokningsfakta { margin: 0; max-width: none; }
+.bokningskort .bokningsfakta dd { display: flex; flex-wrap: wrap; gap: .3rem; }
+.bokningskort-atgarder { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.kod { font-family: ui-monospace, Consolas, monospace; letter-spacing: .08em; color: var(--accent); }
+
+.status {
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    padding: .2rem .6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.status-aktiv .status { background: rgba(244, 182, 63, .15); color: var(--accent); }
+.status-avbokad .status { background: rgba(229, 72, 77, .15); color: var(--rod); }
+.status-genomford .status { background: var(--yta-2); color: var(--text-dampad); }
+
 /* ---------- Inloggning ---------- */
 
 .auth-sida { max-width: 440px; margin: 2rem auto; }
