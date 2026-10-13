@@ -31,6 +31,13 @@ public class LoggaInDto
     public string Losenord { get; set; } = string.Empty;
 }
 
+public record AnvandarDto(
+    string Id,
+    string Email,
+    string Fornamn,
+    string Efternamn,
+    IReadOnlyList<string> Roller);
+
 /// <summary>Svaret efter lyckad inloggning. Klienten sparar token och skickar den i varje anrop.</summary>
 public record InloggningSvar(
     string Token,
