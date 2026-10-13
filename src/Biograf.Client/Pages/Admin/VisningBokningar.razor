@@ -1,0 +1,79 @@
+@page "/admin/visningar/{VisningId:int}/bokningar"
+@attribute [Authorize(Roles = Roller.PersonalEllerAdmin)]
+@inject ApiKlient Api
+
+<PageTitle>Bokningar för visning – Administration</PageTitle>
+
+<h1>Administration</h1>
+<AdminMeny />
+
+<a class="tillbaka" href="admin/visningar">← Alla visningar</a>
+
+<Meddelande Text="@fel" />
+<Meddelande Typ="ok" Text="@klart" />
+
+@if (visning is not null)
+{
+    <h2>@visning.FilmTitel</h2>
+    <p class="dampad">
+        @Datumtext.DagOchTid(visning.Starttid) · @visning.SalongNamn ·
+        @(visning.Kapacitet - visning.LedigaPlatser) av @visning.Kapacitet platser bokade ·
+        intäkt @aktiva.Sum(b => b.Totalpris) kr
+    </p>
+}
+
+@if (bokningar is null)
+{
+    <Laddar />
+}
+else if (bokningar.Count == 0)
+{
+    <p class="dampad">Inga bokningar för den här visningen.</p>
+}
+else
+{
+    <div class="bokningslista">
+        @foreach (var bokning in bokningar)
+        {
+            <BokningsKort @key="bokning.Id" Bokning="bokning" VisaKund="true" ArPersonal="true" OnAvboka="AvbokaAsync" />
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int VisningId { get; set; }
+
+    private VisningDto? visning;
+    private List<BokningDto>? bokningar;
+    private string? fel, klart;
+
+    private IEnumerable<BokningDto> aktiva => bokningar?.Where(b => b.Status != Bokningsregler.Avbokad) ?? [];
+
+    protected override Task OnParametersSetAsync() => HamtaAsync();
+
+    private async Task HamtaAsync()
+    {
+        var visningSvar = Api.GetAsync<VisningDto>($"api/visningar/{VisningId}");
+        var bokningSvar = Api.GetAsync<List<BokningDto>>(Url.Med("api/bokningar", ("visningId", VisningId)));
+        await Task.WhenAll(visningSvar, bokningSvar);
+
+        visning = visningSvar.Result.Data;
+        bokningar = bokningSvar.Result.Data ?? [];
+        fel = visningSvar.Result.Fel ?? bokningSvar.Result.Fel;
+    }
+
+    private async Task AvbokaAsync(int id)
+    {
+        fel = klart = null;
+        var svar = await Api.PostAsync<BokningDto>($"api/bokningar/{id}/avboka");
+        if (svar.Lyckades)
+        {
+            klart = $"Bokning {svar.Data!.Bokningsnummer} avbokades.";
+            await HamtaAsync();
+        }
+        else
+        {
+            fel = svar.Fel;
+        }
+    }
+}
