@@ -1,0 +1,11 @@
+@* Undermeny som visas överst på alla adminsidor. *@
+
+<nav class="flikar">
+    <NavLink href="admin" Match="NavLinkMatch.All">Översikt</NavLink>
+    <NavLink href="admin/filmer">Filmer</NavLink>
+    <NavLink href="admin/salonger">Salonger</NavLink>
+    <NavLink href="admin/visningar">Visningar</NavLink>
+    <AuthorizeView Roles="@Roller.Admin">
+        <NavLink href="admin/anvandare">Användare</NavLink>
+    </AuthorizeView>
+</nav>

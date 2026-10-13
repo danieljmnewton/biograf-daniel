@@ -588,6 +588,75 @@ textarea { min-height: 110px; resize: vertical; }
 .status-avbokad .status { background: rgba(229, 72, 77, .15); color: var(--rod); }
 .status-genomford .status { background: var(--yta-2); color: var(--text-dampad); }
 
+/* ---------- Administration ---------- */
+
+.flikar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    border-bottom: 1px solid var(--kant);
+    margin-bottom: 1.5rem;
+}
+.flikar a {
+    color: var(--text-dampad);
+    padding: .6rem 1rem;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    font-weight: 500;
+}
+.flikar a:hover { color: var(--text); text-decoration: none; }
+.flikar a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.admin-delad {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+.admin-delad:has(> section:nth-child(2)) { grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); }
+@media (max-width: 960px) { .admin-delad:has(> section:nth-child(2)) { grid-template-columns: minmax(0, 1fr); } }
+
+.tabell { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.tabell th {
+    text-align: left;
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-dampad);
+    font-weight: 600;
+    padding: .5rem .6rem;
+    border-bottom: 1px solid var(--kant);
+}
+.tabell td { padding: .55rem .6rem; border-bottom: 1px solid var(--kant); vertical-align: middle; }
+.tabell tr:last-child td { border-bottom: none; }
+.tabell tr.markerad td { background: rgba(244, 182, 63, .08); }
+.tabell .atgarder { text-align: right; white-space: nowrap; }
+.tabell .tal { white-space: nowrap; }
+.tabell .atgarder .knapp + .knapp { margin-left: .35rem; }
+.tabell select { padding: .3rem .5rem; width: auto; }
+.kort:has(> .tabell) { overflow-x: auto; }
+
+.falt-rad { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; }
+.knapprad { display: flex; gap: .5rem; }
+.filterrad-inbaddad { padding: 0; border: none; background: none; margin-bottom: 1rem; }
+
+.nyckeltal {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.nyckeltal-kort { display: grid; gap: .1rem; color: var(--text); }
+.nyckeltal-kort:hover { text-decoration: none; border-color: var(--accent); }
+.nyckeltal-kort strong { font-family: var(--rubrik); font-size: 2.6rem; font-weight: 400; color: var(--accent); line-height: 1; }
+.nyckeltal-kort span { color: var(--text-dampad); }
+
+.status-tagg { font-size: .75rem; font-weight: 700; padding: .15rem .5rem; border-radius: 999px; }
+.status-tagg.gul { background: rgba(244, 182, 63, .15); color: var(--accent); }
+.status-tagg.rod { background: rgba(229, 72, 77, .15); color: var(--rod); }
+
+code { font-family: ui-monospace, Consolas, monospace; font-size: .85em; color: var(--accent); }
+
 /* ---------- Inloggning ---------- */
 
 .auth-sida { max-width: 440px; margin: 2rem auto; }
