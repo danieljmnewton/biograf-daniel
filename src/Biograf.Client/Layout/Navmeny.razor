@@ -14,6 +14,9 @@
             <AuthorizeView>
                 <NavLink href="mina-bokningar">Mina bokningar</NavLink>
             </AuthorizeView>
+            <AuthorizeView Roles="@Roller.PersonalEllerAdmin">
+                <NavLink href="admin">Administration</NavLink>
+            </AuthorizeView>
         </nav>
 
         <div class="meny-anvandare" @onclick="StangMeny">
