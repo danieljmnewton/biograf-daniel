@@ -1,7 +1,12 @@
+using System.Text;
 using Biograf.Api.Data;
 using Biograf.Api.Models;
+using Biograf.Api.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,9 +35,54 @@ builder.Services
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<BiografDbContext>();
 
+// JWT: klienten skickar en token i Authorization-headern som API:t validerar.
+var jwt = builder.Configuration.GetSection("Jwt").Get<JwtInstallningar>() ?? new JwtInstallningar();
+builder.Services.AddSingleton(jwt);
+builder.Services.AddScoped<TokenTjanst>();
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwt.Utfardare,
+            ValidateAudience = true,
+            ValidAudience = jwt.Mottagare,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Nyckel)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+builder.Services.AddAuthorization();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Gör det möjligt att klistra in en JWT i Swagger via knappen "Authorize".
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Klistra in token från /api/auth/logga-in"
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 
@@ -52,6 +102,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors(KlientPolicy);
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
