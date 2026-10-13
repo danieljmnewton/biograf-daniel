@@ -1,0 +1,204 @@
+@page "/admin/visningar"
+@attribute [Authorize(Roles = Roller.PersonalEllerAdmin)]
+@inject ApiKlient Api
+@inject IJSRuntime JS
+
+<PageTitle>Visningar – Administration</PageTitle>
+
+<h1>Administration</h1>
+<AdminMeny />
+
+<Meddelande Text="@fel" />
+<Meddelande Typ="ok" Text="@klart" />
+
+<div class="admin-delad">
+    <section class="kort">
+        <div class="sektionsrubrik">
+            <h2>Visningar</h2>
+            <button class="knapp knapp-liten knapp-primar" @onclick="Ny">+ Ny visning</button>
+        </div>
+
+        <div class="filterrad filterrad-inbaddad">
+            <div class="falt">
+                <label for="datum">Datum</label>
+                <input id="datum" type="date" @bind="datum" @bind:after="HamtaAsync" />
+            </div>
+            <div class="falt">
+                <label for="salong">Salong</label>
+                <select id="salong" @bind="salongFilter" @bind:after="HamtaAsync">
+                    <option value="">Alla</option>
+                    @foreach (var s in salonger)
+                    {
+                        <option value="@s.Id">@s.Namn</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        @if (visningar is null)
+        {
+            <Laddar />
+        }
+        else if (visningar.Count == 0)
+        {
+            <p class="dampad">Inga kommande visningar det här datumet.</p>
+        }
+        else
+        {
+            <table class="tabell">
+                <thead><tr><th>Tid</th><th>Film</th><th>Salong</th><th>Pris</th><th>Bokade</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var v in visningar)
+                    {
+                        <tr class="@(redigeradId == v.Id ? "markerad" : "")">
+                            <td class="tal">@v.Starttid.ToString("HH:mm")–@v.Sluttid.ToString("HH:mm")</td>
+                            <td>@v.FilmTitel</td>
+                            <td>@v.SalongNamn</td>
+                            <td class="tal">@v.Grundpris kr</td>
+                            <td><a href="admin/visningar/@v.Id/bokningar">@(v.Kapacitet - v.LedigaPlatser) / @v.Kapacitet</a></td>
+                            <td class="atgarder">
+                                <button class="knapp knapp-liten" @onclick="() => Redigera(v)">Ändra</button>
+                                <button class="knapp knapp-liten knapp-fara" @onclick="() => TaBortAsync(v)">Ta bort</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    @if (formular is not null)
+    {
+        <section class="kort">
+            <h2>@(redigeradId is null ? "Ny visning" : "Ändra visning")</h2>
+            <EditForm Model="formular" OnValidSubmit="SparaAsync" class="formular">
+                <DataAnnotationsValidator />
+                <div class="falt">
+                    <label>Film</label>
+                    <InputSelect @bind-Value="formular.FilmId">
+                        <option value="0">Välj film…</option>
+                        @foreach (var f in filmer)
+                        {
+                            <option value="@f.Id">@f.Titel (@f.LangdMinuter min)</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => formular.FilmId" />
+                </div>
+                <div class="falt">
+                    <label>Salong</label>
+                    <InputSelect @bind-Value="formular.SalongId">
+                        <option value="0">Välj salong…</option>
+                        @foreach (var s in salonger)
+                        {
+                            <option value="@s.Id">@s.Namn (@s.Kapacitet platser)</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => formular.SalongId" />
+                </div>
+                <div class="falt-rad">
+                    <div class="falt">
+                        <label>Starttid</label>
+                        <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="formular.Starttid" />
+                    </div>
+                    <div class="falt">
+                        <label>Grundpris (kr)</label>
+                        <InputNumber @bind-Value="formular.Grundpris" />
+                        <ValidationMessage For="() => formular.Grundpris" />
+                    </div>
+                </div>
+                <p class="dampad liten">VIP-platser kostar @Priser.VipTillagg kr extra. Visningar i samma salong måste ha minst @Priser.StadtidMinuter minuter emellan.</p>
+                <div class="knapprad">
+                    <button type="submit" class="knapp knapp-primar" disabled="@sparar">Spara</button>
+                    <button type="button" class="knapp" @onclick="Stang">Avbryt</button>
+                </div>
+            </EditForm>
+        </section>
+    }
+</div>
+
+@code {
+    private List<VisningDto>? visningar;
+    private List<FilmDto> filmer = [];
+    private List<SalongDto> salonger = [];
+    private DateTime datum = DateTime.Today;
+    private string salongFilter = string.Empty;
+    private SparaVisningDto? formular;
+    private int? redigeradId;
+    private string? fel, klart;
+    private bool sparar;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var filmSvar = Api.GetAsync<List<FilmDto>>("api/filmer");
+        var salongSvar = Api.GetAsync<List<SalongDto>>("api/salonger");
+        await Task.WhenAll(filmSvar, salongSvar);
+        filmer = filmSvar.Result.Data ?? [];
+        salonger = salongSvar.Result.Data ?? [];
+        await HamtaAsync();
+    }
+
+    private async Task HamtaAsync()
+    {
+        var svar = await Api.GetAsync<List<VisningDto>>(Url.Med("api/visningar", ("datum", datum), ("salongId", salongFilter)));
+        visningar = svar.Data ?? [];
+    }
+
+    private void Ny()
+    {
+        redigeradId = null;
+        formular = new SparaVisningDto { Starttid = datum.Date.AddHours(19) };
+    }
+
+    private void Redigera(VisningDto v)
+    {
+        redigeradId = v.Id;
+        formular = new SparaVisningDto { FilmId = v.FilmId, SalongId = v.SalongId, Starttid = v.Starttid, Grundpris = v.Grundpris };
+    }
+
+    private void Stang()
+    {
+        formular = null;
+        redigeradId = null;
+    }
+
+    private async Task SparaAsync()
+    {
+        sparar = true;
+        fel = klart = null;
+
+        var svar = redigeradId is int id
+            ? await Api.PutAsync<VisningDto>($"api/visningar/{id}", formular!)
+            : await Api.PostAsync<VisningDto>("api/visningar", formular);
+
+        if (svar.Lyckades)
+        {
+            klart = $"{svar.Data!.FilmTitel} {Datumtext.DagOchTid(svar.Data.Starttid)} i {svar.Data.SalongNamn} sparades.";
+            datum = svar.Data.Starttid.Date;
+            Stang();
+            await HamtaAsync();
+        }
+        else
+        {
+            fel = svar.Fel;
+        }
+        sparar = false;
+    }
+
+    private async Task TaBortAsync(VisningDto v)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"Ta bort visningen av {v.FilmTitel} {v.Starttid:HH:mm}?"))
+            return;
+
+        fel = klart = null;
+        var svar = await Api.DeleteAsync($"api/visningar/{v.Id}");
+        if (svar.Lyckades)
+        {
+            klart = "Visningen togs bort.";
+            await HamtaAsync();
+        }
+        else
+        {
+            fel = svar.Fel;
+        }
+    }
+}

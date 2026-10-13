@@ -1,0 +1,77 @@
+@page "/admin"
+@attribute [Authorize(Roles = Roller.PersonalEllerAdmin)]
+@inject ApiKlient Api
+
+<PageTitle>Administration – Newtons Biograf</PageTitle>
+
+<h1>Administration</h1>
+<AdminMeny />
+
+@if (laddar)
+{
+    <Laddar />
+}
+else
+{
+    <div class="nyckeltal">
+        <a class="kort nyckeltal-kort" href="admin/filmer"><strong>@antalFilmer</strong><span>filmer</span></a>
+        <a class="kort nyckeltal-kort" href="admin/salonger"><strong>@antalSalonger</strong><span>salonger</span></a>
+        <a class="kort nyckeltal-kort" href="admin/visningar"><strong>@visningarIdag</strong><span>visningar idag</span></a>
+        <div class="kort nyckeltal-kort"><strong>@belaggning.ToString("0.#") %</strong><span>beläggning kommande 7 dagar</span></div>
+    </div>
+
+    <section class="kort">
+        <h2>Senaste bokningshändelser</h2>
+        <p class="dampad liten">Loggen fylls på av eventen <code>BokningSkapad</code> och <code>BokningAvbokad</code> i API:t och nollställs när API:t startas om.</p>
+        @if (logg.Count == 0)
+        {
+            <p class="dampad">Inga bokningar har gjorts sedan API:t startade.</p>
+        }
+        else
+        {
+            <table class="tabell">
+                <thead><tr><th>Tid</th><th>Händelse</th><th>Bokning</th><th>Detaljer</th></tr></thead>
+                <tbody>
+                    @foreach (var h in logg)
+                    {
+                        <tr>
+                            <td>@h.Tid.ToString("HH:mm:ss")</td>
+                            <td><span class="status-tagg @(h.Typ == "Avbokad" ? "rod" : "gul")">@h.Typ</span></td>
+                            <td class="kod">@h.Bokningsnummer</td>
+                            <td>@h.Beskrivning</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+}
+
+@code {
+    private bool laddar = true;
+    private int antalFilmer, antalSalonger, visningarIdag;
+    private double belaggning;
+    private IReadOnlyList<BokningsHandelseDto> logg = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Alla anrop skickas samtidigt och vi väntar in dem tillsammans.
+        var filmer = Api.GetAsync<List<FilmDto>>("api/filmer");
+        var salonger = Api.GetAsync<List<SalongDto>>("api/salonger");
+        var visningar = Api.GetAsync<List<VisningDto>>("api/visningar");
+        var handelser = Api.GetAsync<List<BokningsHandelseDto>>("api/bokningar/logg");
+        await Task.WhenAll(filmer, salonger, visningar, handelser);
+
+        antalFilmer = filmer.Result.Data?.Count ?? 0;
+        antalSalonger = salonger.Result.Data?.Count ?? 0;
+
+        var kommande = (visningar.Result.Data ?? []).Where(v => v.Starttid < DateTime.Today.AddDays(7)).ToList();
+        visningarIdag = kommande.Count(v => v.Starttid.Date == DateTime.Today);
+
+        var platser = kommande.Sum(v => v.Kapacitet);
+        belaggning = platser == 0 ? 0 : Math.Round(100.0 * kommande.Sum(v => v.Kapacitet - v.LedigaPlatser) / platser, 1);
+
+        logg = handelser.Result.Data ?? [];
+        laddar = false;
+    }
+}

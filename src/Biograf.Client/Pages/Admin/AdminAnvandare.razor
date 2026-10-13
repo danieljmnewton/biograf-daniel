@@ -1,0 +1,142 @@
+@page "/admin/anvandare"
+@attribute [Authorize(Roles = Roller.Admin)]
+@inject ApiKlient Api
+
+<PageTitle>Användare – Administration</PageTitle>
+
+<h1>Administration</h1>
+<AdminMeny />
+
+<Meddelande Text="@fel" />
+<Meddelande Typ="ok" Text="@klart" />
+
+<div class="admin-delad">
+    <section class="kort">
+        <div class="sektionsrubrik">
+            <h2>Användare</h2>
+            <button class="knapp knapp-liten knapp-primar" @onclick="() => formular = new SkapaAnvandareDto()">+ Nytt personalkonto</button>
+        </div>
+
+        @if (anvandare is null)
+        {
+            <Laddar />
+        }
+        else
+        {
+            <table class="tabell">
+                <thead><tr><th>Namn</th><th>E-post</th><th>Roll</th></tr></thead>
+                <tbody>
+                    @foreach (var a in anvandare)
+                    {
+                        var roll = a.Roller.FirstOrDefault() ?? Roller.Kund;
+                        <tr>
+                            <td>@a.Fornamn @a.Efternamn</td>
+                            <td>@a.Email</td>
+                            <td>
+                                <select value="@roll" @onchange="e => BytRollAsync(a, e.Value?.ToString())" aria-label="Roll för @a.Email">
+                                    @foreach (var r in Roller.Alla)
+                                    {
+                                        <option value="@r">@r</option>
+                                    }
+                                </select>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    @if (formular is not null)
+    {
+        <section class="kort">
+            <h2>Nytt konto</h2>
+            <EditForm Model="formular" OnValidSubmit="SkapaAsync" class="formular">
+                <DataAnnotationsValidator />
+                <div class="falt-rad">
+                    <div class="falt">
+                        <label>Förnamn</label>
+                        <InputText @bind-Value="formular.Fornamn" />
+                        <ValidationMessage For="() => formular.Fornamn" />
+                    </div>
+                    <div class="falt">
+                        <label>Efternamn</label>
+                        <InputText @bind-Value="formular.Efternamn" />
+                        <ValidationMessage For="() => formular.Efternamn" />
+                    </div>
+                </div>
+                <div class="falt">
+                    <label>E-post</label>
+                    <InputText type="email" @bind-Value="formular.Email" />
+                    <ValidationMessage For="() => formular.Email" />
+                </div>
+                <div class="falt">
+                    <label>Tillfälligt lösenord</label>
+                    <InputText @bind-Value="formular.Losenord" />
+                    <ValidationMessage For="() => formular.Losenord" />
+                </div>
+                <div class="falt">
+                    <label>Roll</label>
+                    <InputSelect @bind-Value="formular.Roll">
+                        <option value="@Roller.Personal">Personal</option>
+                        <option value="@Roller.Admin">Admin</option>
+                    </InputSelect>
+                </div>
+                <div class="knapprad">
+                    <button type="submit" class="knapp knapp-primar" disabled="@sparar">Skapa konto</button>
+                    <button type="button" class="knapp" @onclick="() => formular = null">Avbryt</button>
+                </div>
+            </EditForm>
+        </section>
+    }
+</div>
+
+@code {
+    private List<AnvandarDto>? anvandare;
+    private SkapaAnvandareDto? formular;
+    private string? fel, klart;
+    private bool sparar;
+
+    protected override Task OnInitializedAsync() => HamtaAsync();
+
+    private async Task HamtaAsync()
+    {
+        var svar = await Api.GetAsync<List<AnvandarDto>>("api/admin/anvandare");
+        anvandare = svar.Data ?? [];
+        fel = svar.Fel;
+    }
+
+    private async Task SkapaAsync()
+    {
+        sparar = true;
+        fel = klart = null;
+        var svar = await Api.PostAsync<AnvandarDto>("api/admin/anvandare", formular);
+        if (svar.Lyckades)
+        {
+            klart = $"Kontot för {svar.Data!.Email} skapades med rollen {formular!.Roll}.";
+            formular = null;
+            await HamtaAsync();
+        }
+        else
+        {
+            fel = svar.Fel;
+        }
+        sparar = false;
+    }
+
+    private async Task BytRollAsync(AnvandarDto a, string? roll)
+    {
+        if (string.IsNullOrEmpty(roll))
+            return;
+
+        fel = klart = null;
+        var svar = await Api.PutAsync<object>($"api/admin/anvandare/{a.Id}/roll", new BytRollDto { Roll = roll });
+        if (svar.Lyckades)
+            klart = $"{a.Email} har nu rollen {roll}.";
+        else
+            fel = svar.Fel;
+
+        // Hämta om listan så att rullistan visar den roll som faktiskt gäller (även om bytet nekades).
+        await HamtaAsync();
+    }
+}
