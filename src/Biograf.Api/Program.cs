@@ -44,6 +44,16 @@ builder.Services.AddScoped<FilmTjanst>();
 builder.Services.AddScoped<SalongTjanst>();
 builder.Services.AddScoped<VisningTjanst>();
 
+// Bokningsloggen lever hela appens livstid och prenumererar på eventen
+// från varje BokningTjanst som skapas.
+builder.Services.AddSingleton<BokningsLogg>();
+builder.Services.AddScoped(sp =>
+{
+    var tjanst = new BokningTjanst(sp.GetRequiredService<BiografDbContext>());
+    sp.GetRequiredService<BokningsLogg>().Prenumerera(tjanst);
+    return tjanst;
+});
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
