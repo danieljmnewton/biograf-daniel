@@ -44,7 +44,8 @@ public record SateskartaDto(
 /// <summary>En händelse i bokningsloggen, t.ex. "Bokning NB-7K2Q9 skapad".</summary>
 public record BokningsHandelseDto(DateTime Tid, string Typ, string Bokningsnummer, string Beskrivning);
 
-public static class BokningsStatus
+/// <summary>Statustexter och regler för bokningar som delas mellan API och klient.</summary>
+public static class Bokningsregler
 {
     public const string Aktiv = "Aktiv";
     public const string Avbokad = "Avbokad";
