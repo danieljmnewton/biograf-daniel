@@ -117,7 +117,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// I utveckling kan klienten köras på http, och då får API-anropen inte omdirigeras till https.
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 app.UseCors(KlientPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
