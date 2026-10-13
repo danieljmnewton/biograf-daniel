@@ -433,6 +433,126 @@ textarea { min-height: 110px; resize: vertical; }
 .programrad-info h3 { margin: 0; }
 .programrad-info h3 a { color: var(--text); }
 
+/* ---------- Säteskarta och bokning ---------- */
+
+.bokningslayout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1.5rem;
+    align-items: start;
+}
+@media (max-width: 960px) { .bokningslayout { grid-template-columns: 1fr; } }
+
+.sateskarta {
+    background: var(--yta);
+    border: 1px solid var(--kant);
+    border-radius: var(--radie);
+    padding: 1.5rem 1rem;
+    overflow-x: auto;
+}
+
+.duk {
+    margin: 0 auto 2rem;
+    width: 80%;
+    text-align: center;
+    font-family: var(--rubrik);
+    letter-spacing: .4em;
+    color: var(--text-dampad);
+    padding-bottom: .4rem;
+    border-bottom: 4px solid var(--accent);
+    border-radius: 0 0 50% 50% / 0 0 14px 14px;
+    box-shadow: 0 12px 30px -12px rgba(244, 182, 63, .6);
+}
+
+/* width: max-content + margin: auto centrerar kartan när den får plats och gör den
+   scrollbar från vänsterkanten när den inte gör det (justify-content: center klipper då raderna). */
+.sateskarta-rader { display: grid; gap: .4rem; width: max-content; margin: 0 auto; }
+.saterad { display: flex; align-items: center; gap: .3rem; }
+.radnummer { width: 1.5rem; text-align: center; font-size: .75rem; color: var(--text-dampad); }
+
+.sate {
+    width: 30px;
+    height: 28px;
+    border-radius: 7px 7px 4px 4px;
+    border: 1px solid #3a4258;
+    background: #2a3143;
+    color: var(--text-dampad);
+    font: inherit;
+    font-size: .65rem;
+    cursor: pointer;
+    padding: 0;
+    transition: transform .08s, background .12s;
+}
+.sate:hover:not(:disabled) { transform: translateY(-2px); background: #364057; color: var(--text); }
+.sate-vip { border-color: var(--vip); background: rgba(185, 140, 255, .18); }
+.sate-vald, .sate-vald:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #1a1407; font-weight: 700; }
+.sate-upptagen, .sate:disabled { background: #191c24; border-color: #22262f; color: transparent; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+    .sateskarta { padding: 1rem .5rem; }
+    .saterad { gap: .15rem; }
+    .sate { width: 19px; height: 19px; font-size: .5rem; border-radius: 5px 5px 3px 3px; }
+    .radnummer { width: .9rem; font-size: .55rem; }
+}
+
+.teckenforklaring {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-top: 1.75rem;
+    font-size: .85rem;
+    color: var(--text-dampad);
+}
+.teckenforklaring span { display: inline-flex; align-items: center; gap: .4rem; }
+.teckenforklaring i.sate { width: 18px; height: 16px; cursor: default; display: inline-block; }
+
+.sammanfattning { position: sticky; top: 90px; display: grid; gap: 1rem; }
+.sammanfattning h2 { margin: 0; }
+.valda-platser { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.valda-platser li { display: flex; justify-content: space-between; gap: .5rem; }
+.totalt { display: flex; justify-content: space-between; border-top: 1px solid var(--kant); padding-top: .75rem; font-size: 1.15rem; }
+.totalt strong { color: var(--accent); }
+.bred { width: 100%; }
+.liten { font-size: .8rem; margin: 0; }
+.tagg-vip { color: var(--vip); border-color: rgba(185, 140, 255, .5); }
+
+.bekraftelse { max-width: 560px; margin: 1rem auto; text-align: center; }
+.bekraftelse-ikon {
+    display: inline-grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(63, 178, 127, .15);
+    color: var(--gron);
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+.bokningsnummer {
+    font-family: var(--rubrik);
+    font-size: 2.6rem;
+    letter-spacing: .12em;
+    color: var(--accent);
+    background: var(--bg);
+    border: 1px dashed var(--kant);
+    border-radius: 10px;
+    padding: .5rem 1rem;
+    margin: 1rem auto 1.5rem;
+    display: inline-block;
+}
+.bokningsfakta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .4rem 1rem;
+    text-align: left;
+    margin: 0 auto 1.5rem;
+    max-width: 400px;
+}
+.bokningsfakta dt { color: var(--text-dampad); }
+.bokningsfakta dd { margin: 0; }
+.bekraftelse .hero-knappar { justify-content: center; }
+
 /* ---------- Inloggning ---------- */
 
 .auth-sida { max-width: 440px; margin: 2rem auto; }
