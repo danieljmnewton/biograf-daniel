@@ -1,0 +1,78 @@
+@* En bokning i listan. Avbokning kräver två klick så att man inte avbokar av misstag. *@
+
+<article class="bokningskort kort status-@StatusKlass">
+    <div class="bokningskort-huvud">
+        <div>
+            <h3>@Bokning.FilmTitel</h3>
+            <span class="dampad">@Datumtext.DagOchTid(Bokning.Starttid) · @Bokning.SalongNamn</span>
+        </div>
+        <span class="status">@Bokning.Status</span>
+    </div>
+
+    <dl class="bokningsfakta">
+        <dt>Bokningsnr</dt><dd class="kod">@Bokning.Bokningsnummer</dd>
+        <dt>Platser</dt>
+        <dd>
+            @foreach (var plats in Bokning.Platser)
+            {
+                <span class="tagg @(plats.Typ == "VIP" ? "tagg-vip" : "")">Rad @plats.Rad · @plats.Nummer</span>
+            }
+        </dd>
+        <dt>Totalt</dt><dd>@Bokning.Totalpris kr</dd>
+        @if (VisaKund)
+        {
+            <dt>Kund</dt><dd>@Bokning.KundNamn <span class="dampad">(@Bokning.KundEmail)</span></dd>
+        }
+    </dl>
+
+    @if (KanAvbokas)
+    {
+        <div class="bokningskort-atgarder">
+            @if (bekraftar)
+            {
+                <span>Vill du avboka?</span>
+                <button class="knapp knapp-fara knapp-liten" disabled="@avbokar" @onclick="AvbokaAsync">@(avbokar ? "Avbokar…" : "Ja, avboka")</button>
+                <button class="knapp knapp-liten" @onclick="() => bekraftar = false">Nej</button>
+            }
+            else
+            {
+                <button class="knapp knapp-liten" @onclick="() => bekraftar = true">Avboka</button>
+            }
+        </div>
+    }
+    else if (Bokning.Status == Bokningsregler.Aktiv)
+    {
+        <p class="dampad liten">Avbokning stängde @Bokningsregler.AvbokningsgransTimmar timmar före visningen.</p>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public BokningDto Bokning { get; set; } = null!;
+
+    /// <summary>Personal ser kundens namn och kan avboka även efter kundens avbokningsgräns.</summary>
+    [Parameter] public bool VisaKund { get; set; }
+    [Parameter] public bool ArPersonal { get; set; }
+
+    /// <summary>Anropas med bokningens id när användaren har bekräftat avbokningen.</summary>
+    [Parameter] public EventCallback<int> OnAvboka { get; set; }
+
+    private bool bekraftar;
+    private bool avbokar;
+
+    private bool KanAvbokas => Bokning.KanAvbokas || (ArPersonal && Bokning.Status == Bokningsregler.Aktiv);
+
+    private string StatusKlass => Bokning.Status switch
+    {
+        Bokningsregler.Aktiv => "aktiv",
+        Bokningsregler.Avbokad => "avbokad",
+        _ => "genomford"
+    };
+
+    private async Task AvbokaAsync()
+    {
+        avbokar = true;
+        await OnAvboka.InvokeAsync(Bokning.Id);
+        avbokar = false;
+        bekraftar = false;
+    }
+}
