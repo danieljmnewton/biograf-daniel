@@ -1,6 +1,7 @@
 using Biograf.Api.Models;
 using Biograf.Api.Services;
 using Biograf.Shared.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,6 +31,9 @@ public class AuthController(UserManager<Anvandare> anvandarHanterare, TokenTjans
             return ValidationProblem(ModelState);
         }
 
+        // Alla som registrerar sig själva blir kunder. Personal skapas av admin.
+        await anvandarHanterare.AddToRoleAsync(anvandare, Roller.Kund);
+
         return await SkapaSvarAsync(anvandare);
     }
 
@@ -45,6 +49,19 @@ public class AuthController(UserManager<Anvandare> anvandarHanterare, TokenTjans
             return Unauthorized(new ProblemDetails { Title = "Fel e-post eller lösenord." });
 
         return await SkapaSvarAsync(anvandare);
+    }
+
+    /// <summary>Returnerar den inloggade användarens uppgifter. Kräver en giltig token.</summary>
+    [Authorize]
+    [HttpGet("jag")]
+    public async Task<ActionResult<AnvandarDto>> Jag()
+    {
+        var anvandare = await anvandarHanterare.GetUserAsync(User);
+        if (anvandare is null)
+            return Unauthorized();
+
+        var roller = await anvandarHanterare.GetRolesAsync(anvandare);
+        return new AnvandarDto(anvandare.Id, anvandare.Email!, anvandare.Fornamn, anvandare.Efternamn, roller.ToList());
     }
 
     private async Task<InloggningSvar> SkapaSvarAsync(Anvandare anvandare)

@@ -93,6 +93,9 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<BiografDbContext>();
     await db.Database.MigrateAsync();
     await DbSeeder.SeedAsync(db);
+    await AnvandarSeeder.SeedAsync(
+        scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>(),
+        scope.ServiceProvider.GetRequiredService<UserManager<Anvandare>>());
 }
 
 if (app.Environment.IsDevelopment())
