@@ -1,9 +1,15 @@
 using Biograf.Api.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Biograf.Api.Data;
 
-public class BiografDbContext(DbContextOptions<BiografDbContext> options) : DbContext(options)
+/// <summary>
+/// Databaskontexten. Ärver från IdentityDbContext så att användare och roller
+/// ligger i samma databas som filmer och bokningar.
+/// </summary>
+public class BiografDbContext(DbContextOptions<BiografDbContext> options)
+    : IdentityDbContext<Anvandare>(options)
 {
     public DbSet<Film> Filmer => Set<Film>();
     public DbSet<Salong> Salonger => Set<Salong>();
@@ -61,12 +67,16 @@ public class BiografDbContext(DbContextOptions<BiografDbContext> options) : DbCo
         {
             e.Property(b => b.Bokningsnummer).HasMaxLength(20).IsRequired();
             e.HasIndex(b => b.Bokningsnummer).IsUnique();
-            e.HasIndex(b => b.KundId);
             e.Property(b => b.Status).HasConversion<string>().HasMaxLength(20);
 
             e.HasOne(b => b.Visning)
                 .WithMany(v => v.Bokningar)
                 .HasForeignKey(b => b.VisningId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(b => b.Kund)
+                .WithMany(a => a.Bokningar)
+                .HasForeignKey(b => b.KundId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

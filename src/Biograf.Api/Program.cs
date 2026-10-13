@@ -1,4 +1,6 @@
 using Biograf.Api.Data;
+using Biograf.Api.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +17,18 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddDbContext<BiografDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Biograf")));
+
+// Identity sköter användare, lösenordshashning och roller.
+builder.Services
+    .AddIdentityCore<Anvandare>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 6;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireUppercase = false;
+    })
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<BiografDbContext>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

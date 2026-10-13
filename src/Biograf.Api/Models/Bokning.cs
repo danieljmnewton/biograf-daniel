@@ -14,8 +14,8 @@ public class Bokning
     /// <summary>Kort kod som visas för kunden, t.ex. "NB-7K2Q9".</summary>
     public string Bokningsnummer { get; set; } = string.Empty;
 
-    /// <summary>Id för användaren som bokade. Kopplas till inloggningen i sprint 2.</summary>
     public string KundId { get; set; } = string.Empty;
+    public Anvandare Kund { get; set; } = null!;
 
     public int VisningId { get; set; }
     public Visning Visning { get; set; } = null!;
