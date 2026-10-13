@@ -1,0 +1,74 @@
+@page "/registrera"
+@inject ApiKlient Api
+@inject JwtAuthStateProvider AuthState
+@inject NavigationManager Navigation
+
+<PageTitle>Bli medlem – Newtons Biograf</PageTitle>
+
+<div class="auth-sida">
+    <h1>Bli medlem</h1>
+
+    <div class="kort">
+        <Meddelande Text="@fel" />
+
+        <EditForm Model="modell" OnValidSubmit="SkickaAsync" class="formular">
+            <DataAnnotationsValidator />
+
+            <div class="falt">
+                <label for="fornamn">Förnamn</label>
+                <InputText id="fornamn" @bind-Value="modell.Fornamn" autocomplete="given-name" />
+                <ValidationMessage For="() => modell.Fornamn" />
+            </div>
+
+            <div class="falt">
+                <label for="efternamn">Efternamn</label>
+                <InputText id="efternamn" @bind-Value="modell.Efternamn" autocomplete="family-name" />
+                <ValidationMessage For="() => modell.Efternamn" />
+            </div>
+
+            <div class="falt">
+                <label for="email">E-post</label>
+                <InputText id="email" type="email" @bind-Value="modell.Email" autocomplete="email" />
+                <ValidationMessage For="() => modell.Email" />
+            </div>
+
+            <div class="falt">
+                <label for="losenord">Lösenord</label>
+                <InputText id="losenord" type="password" @bind-Value="modell.Losenord" autocomplete="new-password" />
+                <small class="dampad">Minst 6 tecken, varav en siffra och en liten bokstav.</small>
+                <ValidationMessage For="() => modell.Losenord" />
+            </div>
+
+            <button class="knapp knapp-primar" type="submit" disabled="@skickar">
+                @(skickar ? "Skapar konto…" : "Skapa konto")
+            </button>
+        </EditForm>
+
+        <p class="dampad" style="margin-bottom:0">Har du redan ett konto? <a href="logga-in">Logga in</a></p>
+    </div>
+</div>
+
+@code {
+    private readonly RegistreraDto modell = new();
+    private string? fel;
+    private bool skickar;
+
+    private async Task SkickaAsync()
+    {
+        skickar = true;
+        fel = null;
+
+        var svar = await Api.PostAsync<InloggningSvar>("api/auth/registrera", modell);
+        if (svar.Lyckades && svar.Data is not null)
+        {
+            await AuthState.LoggaInAsync(svar.Data);
+            Navigation.NavigateTo("");
+        }
+        else
+        {
+            fel = svar.Fel;
+        }
+
+        skickar = false;
+    }
+}

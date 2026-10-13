@@ -1,0 +1,34 @@
+@page "/"
+
+<PageTitle>Newtons Biograf</PageTitle>
+
+<section class="hero">
+    <h1>Bio som det <span>ska</span> vara</h1>
+    <p>Tre salonger, VIP-platser längst bak och de senaste filmerna. Välj visning, välj plats och boka på under en minut.</p>
+    <div class="hero-knappar">
+        <AuthorizeView>
+            <NotAuthorized>
+                <a class="knapp knapp-primar knapp-stor" href="registrera">Bli medlem</a>
+                <a class="knapp knapp-stor" href="logga-in">Logga in</a>
+            </NotAuthorized>
+            <Authorized>
+                <span class="dampad">Välkommen tillbaka, @context.User.Identity?.Name!</span>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+</section>
+
+<section class="fordelar">
+    <div class="kort fordel">
+        <h3>Välj din plats</h3>
+        <p>Se salongens säteskarta och välj exakt var du vill sitta.</p>
+    </div>
+    <div class="kort fordel">
+        <h3>VIP längst bak</h3>
+        <p>Bredare stolar och bäst utsikt för @Priser.VipTillagg kr extra.</p>
+    </div>
+    <div class="kort fordel">
+        <h3>Ändrade planer?</h3>
+        <p>Avboka själv fram till två timmar före visningen.</p>
+    </div>
+</section>
