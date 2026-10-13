@@ -1,0 +1,10 @@
+@inject NavigationManager Navigation
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Skicka med sidan man försökte nå så att man hamnar där efter inloggningen.
+        var tillbaka = Uri.EscapeDataString(Navigation.ToBaseRelativePath(Navigation.Uri));
+        Navigation.NavigateTo($"logga-in?tillbaka={tillbaka}");
+    }
+}

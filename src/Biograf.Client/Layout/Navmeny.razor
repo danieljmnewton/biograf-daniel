@@ -1,0 +1,47 @@
+@inject JwtAuthStateProvider AuthState
+@inject NavigationManager Navigation
+
+<header class="meny @(oppen ? "oppen" : "")">
+    <div class="meny-inre">
+        <a class="logga" href="">Newtons <span>Biograf</span></a>
+
+        <button class="meny-knapp" @onclick="VaxlaMeny" aria-label="Visa meny">☰</button>
+
+        <nav class="meny-lankar" @onclick="StangMeny">
+            <NavLink href="" Match="NavLinkMatch.All">Hem</NavLink>
+        </nav>
+
+        <div class="meny-anvandare" @onclick="StangMeny">
+            <AuthorizeView>
+                <Authorized>
+                    <span class="anvandar-namn">@context.User.Identity?.Name</span>
+                    @if (HuvudRoll(context.User) is { } roll && roll != Roller.Kund)
+                    {
+                        <span class="roll-tagg">@roll</span>
+                    }
+                    <button class="knapp knapp-liten" @onclick="LoggaUt">Logga ut</button>
+                </Authorized>
+                <NotAuthorized>
+                    <a class="knapp knapp-liten" href="logga-in">Logga in</a>
+                    <a class="knapp knapp-liten knapp-primar" href="registrera">Bli medlem</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</header>
+
+@code {
+    private bool oppen;
+
+    private void VaxlaMeny() => oppen = !oppen;
+    private void StangMeny() => oppen = false;
+
+    private static string? HuvudRoll(ClaimsPrincipal anvandare) =>
+        Roller.Alla.FirstOrDefault(anvandare.IsInRole);
+
+    private async Task LoggaUt()
+    {
+        await AuthState.LoggaUtAsync();
+        Navigation.NavigateTo("");
+    }
+}
