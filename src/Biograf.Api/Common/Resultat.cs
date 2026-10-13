@@ -41,6 +41,12 @@ public class Resultat<T>
     public Resultat<TNy> Map<TNy>(Func<T, TNy> omvandla) =>
         Lyckades ? Resultat<TNy>.Ok(omvandla(Varde!)) : Resultat<TNy>.MedFel(Fel!.Value, Meddelande!);
 
+    /// <summary>För ett misslyckat resultat vidare som en annan typ, t.ex. när en kontroll fallerar.</summary>
+    public Resultat<TNy> FelSom<TNy>() =>
+        Lyckades
+            ? throw new InvalidOperationException("Ett lyckat resultat kan inte göras om till ett fel.")
+            : Resultat<TNy>.MedFel(Fel!.Value, Meddelande!);
+
     internal static Resultat<T> MedFel(FelTyp fel, string meddelande) => new(fel, meddelande);
 }
 
