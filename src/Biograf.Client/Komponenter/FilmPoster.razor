@@ -1,0 +1,36 @@
+@* Visar filmens affisch. Saknas bild skapas en egen affisch med en färg som räknas fram från titeln. *@
+
+<div class="poster @Klass" style="@Bakgrund">
+    @if (!string.IsNullOrEmpty(PosterUrl))
+    {
+        <img src="@PosterUrl" alt="@Titel" loading="lazy" />
+    }
+    else
+    {
+        <span class="poster-genre">@Genre</span>
+        <span class="poster-titel">@Titel</span>
+    }
+    <span class="poster-alder">@Datumtext.Aldersgrans(Aldersgrans)</span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Titel { get; set; } = string.Empty;
+    [Parameter] public string Genre { get; set; } = string.Empty;
+    [Parameter] public int Aldersgrans { get; set; }
+    [Parameter] public string? PosterUrl { get; set; }
+    [Parameter] public string? Klass { get; set; }
+
+    private string Bakgrund
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(PosterUrl))
+                return string.Empty;
+
+            // Samma titel ger alltid samma färg (enkel stabil hash, string.GetHashCode varierar mellan körningar).
+            var hash = Titel.Aggregate(17, (h, c) => unchecked(h * 31 + c));
+            var nyans = Math.Abs(hash % 360);
+            return $"background: linear-gradient(160deg, hsl({nyans} 55% 32%), hsl({(nyans + 40) % 360} 60% 12%));";
+        }
+    }
+}

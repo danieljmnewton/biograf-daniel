@@ -284,6 +284,155 @@ textarea { min-height: 110px; resize: vertical; }
 .fordel h3 { color: var(--accent); }
 .fordel p { margin: 0; color: var(--text-dampad); }
 
+.startsektion { margin-bottom: 2.5rem; }
+.sektionsrubrik { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+
+/* ---------- Filmer och program ---------- */
+
+.tillbaka { display: inline-block; margin-bottom: 1rem; color: var(--text-dampad); }
+
+.filterrad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+.filterrad .falt { flex: 1 1 180px; }
+.filterrad .falt-bred { flex: 2 1 260px; }
+
+.filmrutnat {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 1.25rem;
+}
+
+.filmkort {
+    color: var(--text);
+    border-radius: var(--radie);
+    transition: transform .15s;
+}
+.filmkort:hover { text-decoration: none; transform: translateY(-4px); }
+.filmkort:hover .poster { box-shadow: 0 14px 34px rgba(0, 0, 0, .5), 0 0 0 2px var(--accent); }
+.filmkort-info { padding: .75rem .1rem 0; display: grid; gap: .25rem; }
+.filmkort-info h3 { font-size: 1.35rem; margin: 0; }
+.filmkort-info .tagg { justify-self: start; }
+
+.poster {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    border-radius: var(--radie);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1rem;
+    box-shadow: var(--skugga);
+    transition: box-shadow .15s;
+    background: var(--yta-2);
+}
+.poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.poster-titel {
+    font-family: var(--rubrik);
+    font-size: 1.9rem;
+    line-height: 1;
+    letter-spacing: .03em;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .5);
+}
+.poster-genre {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .15em;
+    color: rgba(255, 255, 255, .75);
+    margin-bottom: .35rem;
+}
+.poster-alder {
+    position: absolute;
+    top: .6rem;
+    right: .6rem;
+    font-size: .75rem;
+    font-weight: 700;
+    background: rgba(0, 0, 0, .55);
+    color: #fff;
+    border-radius: 6px;
+    padding: .15rem .45rem;
+}
+.poster-stor { width: 100%; max-width: 280px; }
+.poster-stor .poster-titel { font-size: 2.6rem; }
+.poster-liten { width: 90px; padding: .5rem; box-shadow: none; }
+.poster-liten .poster-titel { font-size: 1rem; }
+.poster-liten .poster-genre, .poster-liten .poster-alder { display: none; }
+
+.filmdetalj {
+    display: grid;
+    grid-template-columns: minmax(180px, 280px) 1fr;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+    align-items: start;
+}
+.filmdetalj .beskrivning { font-size: 1.1rem; color: var(--text-dampad); max-width: 640px; }
+.taggar { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+@media (max-width: 640px) {
+    .filmdetalj { grid-template-columns: 1fr; }
+    .poster-stor { max-width: 220px; }
+}
+
+.dagrad { margin-bottom: 1.5rem; }
+.dagrad h3 { color: var(--text-dampad); }
+
+.tider { display: flex; flex-wrap: wrap; gap: .6rem; }
+
+.tid {
+    display: grid;
+    min-width: 120px;
+    padding: .55rem .8rem;
+    border-radius: 10px;
+    background: var(--yta-2);
+    border: 1px solid var(--kant);
+    color: var(--text);
+    line-height: 1.3;
+}
+.tid strong { font-size: 1.2rem; color: var(--accent); }
+.tid span { font-size: .85rem; }
+.tid small { font-size: .75rem; color: var(--text-dampad); }
+.tid:hover { border-color: var(--accent); text-decoration: none; }
+.tid.slutsald { opacity: .45; pointer-events: none; }
+.tid.slutsald strong { color: var(--text-dampad); }
+
+.dagval {
+    display: flex;
+    gap: .5rem;
+    overflow-x: auto;
+    padding-bottom: .5rem;
+    margin-bottom: 1rem;
+}
+.dagknapp {
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: .55rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--kant);
+    background: var(--yta);
+    color: var(--text-dampad);
+    cursor: pointer;
+}
+.dagknapp:hover { color: var(--text); }
+.dagknapp.vald { background: var(--accent); border-color: var(--accent); color: #1a1407; }
+
+.programrad {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+.programrad-info { flex: 1; display: grid; gap: .4rem; }
+.programrad-info h3 { margin: 0; }
+.programrad-info h3 a { color: var(--text); }
+
 /* ---------- Inloggning ---------- */
 
 .auth-sida { max-width: 440px; margin: 2rem auto; }

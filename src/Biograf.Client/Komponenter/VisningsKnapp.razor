@@ -1,0 +1,14 @@
+@* En klickbar tid i programmet som leder till platsvalet. *@
+
+<a class="tid @(Visning.LedigaPlatser == 0 ? "slutsald" : "")"
+   href="@(Visning.LedigaPlatser == 0 ? null : $"boka/{Visning.Id}")"
+   title="@Visning.SalongNamn · @Visning.LedigaPlatser lediga platser">
+    <strong>@Visning.Starttid.ToString("HH:mm")</strong>
+    <span>@(VisaSalong ? Visning.SalongNamn : $"{Visning.Grundpris} kr")</span>
+    <small>@(Visning.LedigaPlatser == 0 ? "Slutsåld" : $"{Visning.LedigaPlatser} lediga")</small>
+</a>
+
+@code {
+    [Parameter, EditorRequired] public VisningDto Visning { get; set; } = null!;
+    [Parameter] public bool VisaSalong { get; set; } = true;
+}
