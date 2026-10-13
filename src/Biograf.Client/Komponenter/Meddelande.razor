@@ -1,0 +1,11 @@
+@if (!string.IsNullOrWhiteSpace(Text))
+{
+    <div class="meddelande meddelande-@Typ" role="@(Typ == "fel" ? "alert" : "status")">@Text</div>
+}
+
+@code {
+    [Parameter] public string? Text { get; set; }
+
+    /// <summary>"fel", "ok" eller "info".</summary>
+    [Parameter] public string Typ { get; set; } = "fel";
+}

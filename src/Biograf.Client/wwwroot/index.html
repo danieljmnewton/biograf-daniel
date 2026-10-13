@@ -6,24 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Newtons Biograf</title>
     <base href="/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/app.css" />
-    <!-- If you add any scoped CSS files, uncomment the following to load them
-    <link href="Biograf.Client.styles.css" rel="stylesheet" /> -->
+    <link rel="icon" type="image/png" href="icon-192.png" />
 </head>
 
 <body>
     <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+        <div class="uppstart">
+            <div class="uppstart-logga">Newtons <span>Biograf</span></div>
+            <div class="uppstart-text">Laddar programmet…</div>
+        </div>
     </div>
 
     <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="" class="reload">Reload</a>
-        <a class="dismiss">🗙</a>
+        Ett oväntat fel inträffade.
+        <a href="" class="reload">Ladda om</a>
+        <a class="dismiss">✕</a>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
 </body>
