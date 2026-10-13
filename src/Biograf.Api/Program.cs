@@ -33,7 +33,8 @@ builder.Services
         options.Password.RequireUppercase = false;
     })
     .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<BiografDbContext>();
+    .AddEntityFrameworkStores<BiografDbContext>()
+    .AddErrorDescriber<SvenskaIdentityFel>();
 
 // JWT: klienten skickar en token i Authorization-headern som API:t validerar.
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtInstallningar>() ?? new JwtInstallningar();
