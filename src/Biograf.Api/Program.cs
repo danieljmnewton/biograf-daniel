@@ -41,6 +41,8 @@ var jwt = builder.Configuration.GetSection("Jwt").Get<JwtInstallningar>() ?? new
 builder.Services.AddSingleton(jwt);
 builder.Services.AddScoped<TokenTjanst>();
 builder.Services.AddScoped<FilmTjanst>();
+builder.Services.AddScoped<SalongTjanst>();
+builder.Services.AddScoped<VisningTjanst>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
