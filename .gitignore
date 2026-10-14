@@ -482,3 +482,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# SQLite: själva databasfilen (src/Biograf.Api/biograf.db) ska med i repot, men inte dess temporära filer
+*.db-shm
+*.db-wal
+*.db-journal

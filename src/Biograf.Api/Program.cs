@@ -4,6 +4,7 @@ using Biograf.Api.Models;
 using Biograf.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -20,8 +21,13 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowAnyMethod()));
 
-builder.Services.AddDbContext<BiografDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("Biograf")));
+// En relativ sökväg till databasfilen räknas från API-projektets mapp, så att samma
+// biograf.db används oavsett om appen startas från Visual Studio, Rider eller terminalen.
+var anslutning = new SqliteConnectionStringBuilder(builder.Configuration.GetConnectionString("Biograf"));
+if (!Path.IsPathRooted(anslutning.DataSource))
+    anslutning.DataSource = Path.Combine(builder.Environment.ContentRootPath, anslutning.DataSource);
+
+builder.Services.AddDbContext<BiografDbContext>(options => options.UseSqlite(anslutning.ToString()));
 
 // Identity sköter användare, lösenordshashning och roller.
 builder.Services
