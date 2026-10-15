@@ -87,6 +87,8 @@ public class BiografDbContext(DbContextOptions<BiografDbContext> options)
                 .HasForeignKey(p => p.BokningId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            e.Property(p => p.Biljettyp).HasConversion<string>().HasMaxLength(20);
+
             e.HasOne(p => p.Sate)
                 .WithMany()
                 .HasForeignKey(p => p.SateId)

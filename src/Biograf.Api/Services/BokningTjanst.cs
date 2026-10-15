@@ -44,7 +44,7 @@ public class BokningTjanst(BiografDbContext db)
             .ToList();
 
         return Resultat<SateskartaDto>.Ok(new SateskartaDto(
-            visning.Id, visning.Film.Titel, visning.Salong.Namn, visning.Starttid,
+            visning.Id, visning.Film.Titel, visning.Salong.Namn, visning.Starttid, visning.Film.Aldersgrans,
             visning.Grundpris, visning.Grundpris + Priser.VipTillagg, saten));
     }
 
@@ -54,16 +54,27 @@ public class BokningTjanst(BiografDbContext db)
     /// </summary>
     public async Task<Resultat<BokningDto>> SkapaAsync(string kundId, SkapaBokningDto dto)
     {
-        var sateIds = dto.SateIds.Distinct().ToList();
-        if (sateIds.Count == 0)
+        if (dto.Platser.Count == 0)
             return Resultat<BokningDto>.Ogiltig("Välj minst en plats.");
 
-        var visning = await db.Visningar.FindAsync(dto.VisningId);
+        // Biljettyp per säte. Samma säte får inte förekomma två gånger i samma bokning.
+        var biljettyper = dto.Platser
+            .GroupBy(p => p.SateId)
+            .ToDictionary(g => g.Key, g => g.First().Biljettyp);
+        if (biljettyper.Count != dto.Platser.Count)
+            return Resultat<BokningDto>.Ogiltig("Samma plats har valts mer än en gång.");
+        var sateIds = biljettyper.Keys.ToList();
+
+        var visning = await db.Visningar.Include(v => v.Film).FirstOrDefaultAsync(v => v.Id == dto.VisningId);
         if (visning is null)
             return Resultat<BokningDto>.HittadesInte("Visningen finns inte.");
 
         if (visning.Starttid <= DateTime.Now)
             return Resultat<BokningDto>.Ogiltig("Visningen har redan börjat.");
+
+        if (biljettyper.ContainsValue(Biljettyp.Barn) && !Priser.BarnbiljettTillaten(visning.Film.Aldersgrans))
+            return Resultat<BokningDto>.Ogiltig(
+                $"Barnbiljetter säljs inte till filmer från {Priser.BarnbiljettSparrFranAlder} år ({visning.Film.Titel} har {visning.Film.Aldersgrans} år).");
 
         var saten = await db.Saten
             .Where(s => sateIds.Contains(s.Id) && s.SalongId == visning.SalongId)
@@ -93,7 +104,8 @@ public class BokningTjanst(BiografDbContext db)
             {
                 VisningId = visning.Id,
                 SateId = s.Id,
-                Pris = PrisFor(s, visning)
+                Biljettyp = biljettyper[s.Id],
+                Pris = Priser.Berakna(visning.Grundpris, s.Typ == SateTyp.VIP, biljettyper[s.Id])
             }).ToList()
         };
         bokning.Totalpris = bokning.Platser.Sum(p => p.Pris);
@@ -178,10 +190,6 @@ public class BokningTjanst(BiografDbContext db)
         return await HamtaAsync(id, anvandarId, arPersonal);
     }
 
-    /// <summary>VIP-platser kostar grundpriset plus ett fast tillägg.</summary>
-    public static int PrisFor(Sate sate, Visning visning) =>
-        sate.Typ == SateTyp.VIP ? visning.Grundpris + Priser.VipTillagg : visning.Grundpris;
-
     public static DateTime SenastAvbokning(DateTime starttid) =>
         starttid.AddHours(-Bokningsregler.AvbokningsgransTimmar);
 
@@ -214,7 +222,7 @@ public class BokningTjanst(BiografDbContext db)
             b.Kund.Email ?? string.Empty,
             b.Platser
                 .OrderBy(p => p.Sate.Rad).ThenBy(p => p.Sate.Nummer)
-                .Select(p => new BokadPlatsDto(p.Sate.Rad, p.Sate.Nummer, p.Sate.Typ.ToString(), p.Pris))
+                .Select(p => new BokadPlatsDto(p.Sate.Rad, p.Sate.Nummer, p.Sate.Typ.ToString(), p.Biljettyp, p.Pris))
                 .ToList());
     }
 
