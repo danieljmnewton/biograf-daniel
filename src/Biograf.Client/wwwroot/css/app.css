@@ -510,7 +510,9 @@ textarea { min-height: 110px; resize: vertical; }
 .sammanfattning { position: sticky; top: 90px; display: grid; gap: 1rem; }
 .sammanfattning h2 { margin: 0; }
 .valda-platser { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
-.valda-platser li { display: flex; justify-content: space-between; gap: .5rem; }
+.valda-platser li { display: grid; grid-template-columns: 1fr auto 4.5rem; align-items: center; gap: .5rem; }
+.valda-platser select { width: auto; padding: .3rem .5rem; font-size: .85rem; }
+.valda-platser .pris { text-align: right; }
 .totalt { display: flex; justify-content: space-between; border-top: 1px solid var(--kant); padding-top: .75rem; font-size: 1.15rem; }
 .totalt strong { color: var(--accent); }
 .bred { width: 100%; }
