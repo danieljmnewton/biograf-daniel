@@ -17,6 +17,7 @@ Projektuppgift i kursen *Ämnesövergripande projekt* (SYSS8, HT26) på Newton.
 - [Arkitektur](#arkitektur)
 - [Generics, delegates/events, LINQ och async](#generics-delegatesevents-linq-och-async)
 - [Tester](#tester)
+- [Ändringshantering](#ändringshantering)
 - [Arbetssätt](#arbetssätt)
 
 ---
@@ -38,6 +39,7 @@ Projektuppgift i kursen *Ämnesövergripande projekt* (SYSS8, HT26) på Newton.
 
 - Ett säte kan bara vara bokat en gång per visning. Det garanteras av ett unikt index i databasen, även vid samtidiga bokningar.
 - VIP-platserna (de bakersta raderna) kostar grundpriset + 50 kr.
+- Biljettyp väljs per plats: **Vuxen** (grundpris), **Barn** (−40 kr) och **Pensionär** (−25 kr). Barnbiljetter säljs inte till filmer från 15 år. Priset räknas i en enda delad funktion (`Priser.Berakna`), så webbappen och API:t räknar alltid lika.
 - Två visningar i samma salong får inte överlappa. Kontrollen räknar med filmens längd plus 20 minuters städtid.
 - Kunden kan avboka fram till 2 timmar före visningen, och avbokade platser blir lediga igen.
 - En salongs platslayout kan inte ändras när den har visningar, och filmer eller salonger med visningar kan inte tas bort.
@@ -97,7 +99,7 @@ Klara vill gå på bio med en kompis på fredag kväll och sitta bra.
 
 1. Hon öppnar **Program**, väljer fredag i dagväljaren och filtrerar på genren *Action*.
 2. Hon klickar på tiden 21:00 för *Top Gun: Maverick*. Säteskartan för Salong 1 visas med duken längst fram, de lediga platserna och de lila VIP-raderna längst bak. Upptagna platser går inte att välja.
-3. Hon väljer två bredvid varandra i rad 9 (VIP). Sammanfattningen visar 195 kr per plats och totalt 390 kr.
+3. Hon väljer två bredvid varandra i rad 9 (VIP). Kompisen är pensionär, så hon byter biljettyp på den ena platsen till *Pensionär*. Sammanfattningen visar 195 kr + 170 kr, totalt 365 kr.
 4. Eftersom hon inte är inloggad står det **Logga in för att boka**. Hon registrerar sig, loggas in direkt och kommer tillbaka till samma visning.
 5. Hon klickar **Boka 2 platser** och får bekräftelsen med bokningsnumret, t.ex. `NB-7K2Q9`.
 
@@ -177,7 +179,7 @@ src/
     Services/      ApiKlient, JwtAuthStateProvider, TokenLagring, Datumtext, Url
   Biograf.Shared/  DTO:er, Roller, Priser, Bokningsregler
 tests/
-  Biograf.Tests/   31 scenariotester
+  Biograf.Tests/   41 scenariotester
 docs/
   testscenarier.md
 ```
@@ -207,7 +209,7 @@ Uppgiften kräver minst tre av teknikerna. Alla fyra används:
 ## Tester
 
 ```bash
-dotnet test     # 31 tester
+dotnet test     # 41 tester
 ```
 
 Testerna är skrivna som scenarier (Givet/När/Så) och dokumenterade i **[docs/testscenarier.md](docs/testscenarier.md)**. De täcker:
@@ -217,6 +219,21 @@ Testerna är skrivna som scenarier (Givet/När/Så) och dokumenterade i **[docs/
 - inloggning och rollskydd via riktiga HTTP-anrop
 
 Tjänstetesterna körs mot SQLite i minnet, så att index och transaktioner fungerar som i den riktiga databasen.
+
+## Ändringshantering
+
+Ingen ändringsbegäran kom in från kund eller ASK under projektet. För att öva processen formulerades därför en egen, **simulerad ändringsbegäran**, som om den kom från biografens ledning efter sprint 3. Det står tydligt i issuet.
+
+> *"Vi vill kunna ta olika pris för barn och pensionärer. Kunden ska välja biljettyp per plats, och barnbiljetter ska inte gå att köpa till filmer från 15 år."* (#32)
+
+**Så hanterades den**
+1. **Registrering:** ett eget issue (#32) med etiketten `change-request`, acceptanskriterier och en **konsekvensanalys** av vilka lager som påverkas (databas, Shared, API, klient, tester och dokumentation).
+2. **Bedömning:** en medelstor ändring som berör alla lager, men bara bokningsflödet. Den genomfördes i en egen branch och PR (#33).
+3. **Genomförande:**
+   - En ny kolumn `BokadPlats.Biljettyp` med en migration som ger befintliga bokningar typen *Vuxen*, så att ingen data går förlorad.
+   - Prisregeln flyttades från `BokningTjanst` till `Priser.Berakna` i Shared. Klienten räknade tidigare VIP-priset själv, och nu används samma kod på båda sidor.
+   - `SkapaBokningDto` gick från en lista med säte-id till en lista med säte + biljettyp. Det är en **brytande API-ändring**, så alla anrop och tester uppdaterades i samma PR.
+4. **Verifiering:** de befintliga 31 testerna skrevs om till den nya DTO:n och gick fortfarande igenom. 10 nya tester (T1–T5) täcker priserna och barnregeln, och flödet testades manuellt i webbläsaren.
 
 ## Arbetssätt
 
@@ -228,6 +245,7 @@ Tjänstetesterna körs mot SQLite i minnet, så att index och transaktioner fung
 | 2 – Auth & admin | 13 okt | Identity + JWT, roller, användarhantering, CRUD för filmer, salonger och visningar | #4–#8 | #19–#23 |
 | 3 – Frontend | 13 okt | Boknings-API, design, sök och filter, säteskarta, mina bokningar, adminpanel | #9–#13 | #24–#29 |
 | 4 – Kvalitet | 14 okt | Tester, dokumentation, databas | #14–#15 | #30–#31 |
+| Ändring | 16 okt | Ändringsbegäran: biljettyper | #32 | #33 |
 
 - **Git:** en branch per issue (`feature/<nr>-<namn>`) och små commits med beskrivande meddelanden på svenska. Varje issue mergades till `main` via en pull request med beskrivning och testresultat, och PR:en stängde sitt issue.
 - **Roller:** projektet gjordes individuellt, så samma person hade rollerna Scrum Master, Tech Lead och testansvarig.

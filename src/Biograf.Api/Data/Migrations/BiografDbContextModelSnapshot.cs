@@ -101,6 +101,11 @@ namespace Biograf.Api.Data.Migrations
                     b.Property<bool>("Aktiv")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Biljettyp")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("BokningId")
                         .HasColumnType("INTEGER");
 

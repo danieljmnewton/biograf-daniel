@@ -34,6 +34,18 @@ Varje test har ett id (B1, V1 …) i sitt `DisplayName` så att det går att kop
 | B8 | Lyssnare är kopplade till eventen `BokningSkapad` och `BokningAvbokad` | En bokning skapas och avbokas | Båda eventen utlöses i rätt ordning med rätt bokningsnummer |
 | B9 | En visning som började för 10 minuter sedan | Kunden försöker boka | Bokningen nekas som *Ogiltig* |
 
+## Biljettyper, ändringsbegäran #32 (`BiljettypTester.cs`)
+
+| Id | Givet | När | Så |
+|---|---|---|---|
+| T1 | Grundpris 120 kr | Priset räknas för Vuxen, Barn och Pensionär, med och utan VIP, samt Barn på en visning för 30 kr | 120 / 80 / 95, VIP 170 / 130, och lägst 0 kr (inget negativt pris) |
+| T2 | En barntillåten visning | Kunden bokar en vuxen-, en barn- och en pensionärsbiljett, den sista på en VIP-plats | Varje plats får rätt typ och pris (120, 80, 145), och totalen är 345 kr |
+| T3 | En film från 15 år | Kunden bokar en barnbiljett och sedan en vuxenbiljett | Barnbiljetten nekas som *Ogiltig* med ett förklarande meddelande, vuxenbiljetten lyckas |
+| T4 | – | Samma säte skickas två gånger i samma bokning | Nekas som *Ogiltig* |
+| T5 | En bokad pensionärsbiljett | Databasen och Mina bokningar läses | Biljettypen är sparad och visas |
+
+Bokningstesterna B1–B9 skrevs om till den nya `SkapaBokningDto` (plats + biljettyp) och fungerar som regressionstester. De gick igenom även efter ändringen.
+
 ## Visningar (`VisningTester.cs`)
 
 Den befintliga visningen börjar 18:00, filmen är 100 minuter och städtiden 20 minuter. Salongen är alltså upptagen 18:00–20:00.

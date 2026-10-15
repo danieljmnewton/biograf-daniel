@@ -15,7 +15,7 @@
         <dd>
             @foreach (var plats in Bokning.Platser)
             {
-                <span class="tagg @(plats.Typ == "VIP" ? "tagg-vip" : "")">Rad @plats.Rad · @plats.Nummer</span>
+                <span class="tagg @(plats.Typ == "VIP" ? "tagg-vip" : "")" title="@plats.Pris kr">Rad @plats.Rad · @plats.Nummer · @Priser.Namn(plats.Biljettyp)</span>
             }
         </dd>
         <dt>Totalt</dt><dd>@Bokning.Totalpris kr</dd>

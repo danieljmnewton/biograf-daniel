@@ -15,7 +15,7 @@ public class BokningTester : IDisposable
     private BokningTjanst NyTjanst() => new(testDb.SkapaKontext());
 
     private SkapaBokningDto Bokning(params int[] sateIds) =>
-        new() { VisningId = testDb.Visning.Id, SateIds = sateIds.ToList() };
+        new() { VisningId = testDb.Visning.Id, Platser = sateIds.Select(id => new PlatsVal { SateId = id }).ToList() };
 
     [Fact(DisplayName = "B1: Kund bokar en standard- och en VIP-plats och får rätt totalpris")]
     public async Task Bokning_med_VIP_plats_far_pristillagg()
@@ -84,7 +84,7 @@ public class BokningTester : IDisposable
     {
         var snart = await SkapaVisningAsync(DateTime.Now.AddHours(1));
         var bokning = await NyTjanst().SkapaAsync(testDb.Kund.Id,
-            new SkapaBokningDto { VisningId = snart.Id, SateIds = [testDb.Sate(testDb.Salong, 1, 1)] });
+            new SkapaBokningDto { VisningId = snart.Id, Platser = [new PlatsVal { SateId = testDb.Sate(testDb.Salong, 1, 1) }] });
 
         Assert.False(bokning.Varde!.KanAvbokas);
 
@@ -130,7 +130,7 @@ public class BokningTester : IDisposable
         var paborjad = await SkapaVisningAsync(DateTime.Now.AddMinutes(-10));
 
         var resultat = await NyTjanst().SkapaAsync(testDb.Kund.Id,
-            new SkapaBokningDto { VisningId = paborjad.Id, SateIds = [testDb.Sate(testDb.Salong, 1, 1)] });
+            new SkapaBokningDto { VisningId = paborjad.Id, Platser = [new PlatsVal { SateId = testDb.Sate(testDb.Salong, 1, 1) }] });
 
         Assert.Equal(FelTyp.Ogiltig, resultat.Fel);
     }

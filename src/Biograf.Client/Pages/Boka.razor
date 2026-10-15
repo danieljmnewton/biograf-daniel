@@ -57,7 +57,13 @@ else
                     {
                         <li>
                             <span>Rad @sate.Rad, plats @sate.Nummer @if (sate.Typ == "VIP") { <span class="tagg tagg-vip">VIP</span> }</span>
-                            <span>@PrisFor(sate) kr</span>
+                            <select value="@TypFor(sate.Id)" @onchange="e => ValjTyp(sate.Id, e.Value)" aria-label="Biljettyp för rad @sate.Rad plats @sate.Nummer">
+                                @foreach (var typ in Enum.GetValues<Biljettyp>())
+                                {
+                                    <option value="@typ" disabled="@(typ == Biljettyp.Barn && !barnTillaten)">@Priser.Namn(typ)</option>
+                                }
+                            </select>
+                            <span class="pris">@PrisFor(sate) kr</span>
                         </li>
                     }
                 </ul>
@@ -78,7 +84,14 @@ else
                 </NotAuthorized>
             </AuthorizeView>
 
-            <p class="dampad liten">Grundpris @karta.Grundpris kr · VIP @karta.VipPris kr. Avbokning går fram till @Bokningsregler.AvbokningsgransTimmar timmar före visningen.</p>
+            <p class="dampad liten">
+                Grundpris @karta.Grundpris kr · VIP +@Priser.VipTillagg kr · Barn −@Priser.BarnRabatt kr · Pensionär −@Priser.PensionarRabatt kr.
+                @if (!barnTillaten)
+                {
+                    <span>Barnbiljetter säljs inte till filmer från @Priser.BarnbiljettSparrFranAlder år.</span>
+                }
+                Avbokning går fram till @Bokningsregler.AvbokningsgransTimmar timmar före visningen.
+            </p>
         </aside>
     </div>
 }
@@ -88,11 +101,13 @@ else
 
     private SateskartaDto? karta;
     private readonly HashSet<int> valda = [];
+    private readonly Dictionary<int, Biljettyp> biljettyper = [];
     private BokningDto? bekraftelse;
     private string? fel;
     private bool skickar;
 
     private int lediga => karta?.Saten.Count(s => !s.Upptagen) ?? 0;
+    private bool barnTillaten => karta is null || Priser.BarnbiljettTillaten(karta.Aldersgrans);
 
     private IEnumerable<SateStatusDto> ValdaSaten =>
         karta!.Saten.Where(s => valda.Contains(s.Id)).OrderBy(s => s.Rad).ThenBy(s => s.Nummer);
@@ -111,17 +126,30 @@ else
             valda.RemoveWhere(id => karta.Saten.Any(s => s.Id == id && s.Upptagen));
     }
 
-    private int PrisFor(SateStatusDto sate) => sate.Typ == "VIP" ? karta!.VipPris : karta!.Grundpris;
+    private Biljettyp TypFor(int sateId) => biljettyper.GetValueOrDefault(sateId, Biljettyp.Vuxen);
+
+    private void ValjTyp(int sateId, object? varde)
+    {
+        if (Enum.TryParse<Biljettyp>(varde?.ToString(), out var typ))
+            biljettyper[sateId] = typ;
+    }
+
+    // Samma prisfunktion som API:t använder, så sammanfattningen alltid stämmer med det som bokas.
+    private int PrisFor(SateStatusDto sate) => Priser.Berakna(karta!.Grundpris, sate.Typ == "VIP", TypFor(sate.Id));
 
     private static string PlatsText(IEnumerable<BokadPlatsDto> platser) =>
-        string.Join(", ", platser.Select(p => $"rad {p.Rad} plats {p.Nummer}{(p.Typ == "VIP" ? " (VIP)" : "")}"));
+        string.Join(", ", platser.Select(p => $"rad {p.Rad} plats {p.Nummer} ({Priser.Namn(p.Biljettyp).ToLower()}{(p.Typ == "VIP" ? ", VIP" : "")})"));
 
     private async Task BokaAsync()
     {
         skickar = true;
         fel = null;
 
-        var dto = new SkapaBokningDto { VisningId = VisningId, SateIds = valda.ToList() };
+        var dto = new SkapaBokningDto
+        {
+            VisningId = VisningId,
+            Platser = valda.Select(id => new PlatsVal { SateId = id, Biljettyp = TypFor(id) }).ToList()
+        };
         var svar = await Api.PostAsync<BokningDto>("api/bokningar", dto);
 
         if (svar.Lyckades)
