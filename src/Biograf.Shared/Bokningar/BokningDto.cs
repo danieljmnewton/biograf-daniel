@@ -9,10 +9,17 @@ public class SkapaBokningDto
 
     [MinLength(1, ErrorMessage = "Välj minst en plats")]
     [MaxLength(10, ErrorMessage = "Du kan boka högst 10 platser åt gången")]
-    public List<int> SateIds { get; set; } = [];
+    public List<PlatsVal> Platser { get; set; } = [];
 }
 
-public record BokadPlatsDto(int Rad, int Nummer, string Typ, int Pris);
+/// <summary>En vald plats och vilken biljettyp den ska ha.</summary>
+public class PlatsVal
+{
+    public int SateId { get; set; }
+    public Biljettyp Biljettyp { get; set; } = Biljettyp.Vuxen;
+}
+
+public record BokadPlatsDto(int Rad, int Nummer, string Typ, Biljettyp Biljettyp, int Pris);
 
 public record BokningDto(
     int Id,
@@ -37,6 +44,7 @@ public record SateskartaDto(
     string FilmTitel,
     string SalongNamn,
     DateTime Starttid,
+    int Aldersgrans,
     int Grundpris,
     int VipPris,
     IReadOnlyList<SateStatusDto> Saten);
